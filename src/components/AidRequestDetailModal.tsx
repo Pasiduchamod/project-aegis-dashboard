@@ -1,4 +1,4 @@
-import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink, User, Phone, Users, Mail } from 'lucide-react';
 import type { AidRequest, AidStatus } from '../types.js';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
 import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatAidRequestEmail, sendEmail } from '../utils/emailUtils.js';
