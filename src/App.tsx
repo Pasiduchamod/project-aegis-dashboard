@@ -1,9 +1,18 @@
 import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
 import type { Incident, AidRequest, DetentionCamp } from './types.js';
 import { subscribeToIncidents, subscribeToAidRequests, subscribeToDetentionCamps } from './services/firebaseService.js';
 
+// Simple admin credentials (in production, use proper authentication)
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'admin123'
+};
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [detentionCamps, setDetentionCamps] = useState<DetentionCamp[]>([]);
@@ -11,7 +20,36 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check for existing session on mount
   useEffect(() => {
+    const savedAuth = localStorage.getItem('lankasafe_admin_auth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (username: string, password: string) => {
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      setIsAuthenticated(true);
+      setLoginError(null);
+      // Save session
+      localStorage.setItem('lankasafe_admin_auth', 'true');
+    } else {
+      setLoginError('Invalid username or password. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('lankasafe_admin_auth');
+  };
+
+  useEffect(() => {
+    // Only subscribe if authenticated
+    if (!isAuthenticated) {
+      setIsLoading(false);
+      return;
+    }
     // Subscribe to real-time Firebase updates
     let unsubscribeIncidents: (() => void) | null = null;
     let unsubscribeAidRequests: (() => void) | null = null;
@@ -54,7 +92,12 @@ function App() {
         unsubscribeDetentionCamps();
       }
     };
-  }, []);
+  }, [isAuthenticated]);
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} error={loginError} />;
+  }
 
   // Show loading state
   if (isLoading) {
@@ -86,7 +129,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Dashboard incidents={incidents} aidRequests={aidRequests} detentionCamps={detentionCamps} isLive={isLive} />
+      <Dashboard 
+        incidents={incidents} 
+        aidRequests={aidRequests} 
+        detentionCamps={detentionCamps} 
+        isLive={isLive}
+        onLogout={handleLogout}
+      />
     </div>
   );
 }
