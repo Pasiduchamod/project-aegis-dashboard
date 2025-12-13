@@ -1,15 +1,46 @@
 import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
-import { Icon, LatLngExpression } from 'leaflet';
+import { Icon, LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Incident } from '../types.js';
 
 interface MapComponentProps {
   incidents: Incident[];
+  selectedDistrict: string;
 }
 
-// Component to fix map size issues
-function MapResizer() {
+// District coordinates for Sri Lanka
+const DISTRICT_COORDS: { [key: string]: { center: LatLngExpression; zoom: number } } = {
+  'All Districts': { center: [7.8731, 80.7718], zoom: 7 }, // Center of Sri Lanka
+  'Colombo': { center: [6.9271, 79.8612], zoom: 11 },
+  'Gampaha': { center: [7.0833, 80.0167], zoom: 10 },
+  'Kalutara': { center: [6.5854, 79.9607], zoom: 10 },
+  'Kandy': { center: [7.2906, 80.6337], zoom: 10 },
+  'Matale': { center: [7.4675, 80.6234], zoom: 10 },
+  'Nuwara Eliya': { center: [6.9497, 80.7891], zoom: 10 },
+  'Galle': { center: [6.0535, 80.2210], zoom: 10 },
+  'Matara': { center: [5.9549, 80.5550], zoom: 10 },
+  'Hambantota': { center: [6.1429, 81.1212], zoom: 10 },
+  'Jaffna': { center: [9.6615, 80.0255], zoom: 10 },
+  'Kilinochchi': { center: [9.3964, 80.3981], zoom: 10 },
+  'Mannar': { center: [8.9810, 79.9044], zoom: 10 },
+  'Vavuniya': { center: [8.7542, 80.4982], zoom: 10 },
+  'Mullaitivu': { center: [9.2671, 80.8142], zoom: 10 },
+  'Batticaloa': { center: [7.7310, 81.6747], zoom: 10 },
+  'Ampara': { center: [7.2973, 81.6747], zoom: 10 },
+  'Trincomalee': { center: [8.5874, 81.2152], zoom: 10 },
+  'Kurunegala': { center: [7.4818, 80.3609], zoom: 10 },
+  'Puttalam': { center: [8.0362, 79.8283], zoom: 10 },
+  'Anuradhapura': { center: [8.3114, 80.4037], zoom: 10 },
+  'Polonnaruwa': { center: [7.9403, 81.0188], zoom: 10 },
+  'Badulla': { center: [6.9934, 81.0550], zoom: 10 },
+  'Monaragala': { center: [6.8728, 81.3507], zoom: 10 },
+  'Ratnapura': { center: [6.6828, 80.3992], zoom: 10 },
+  'Kegalle': { center: [7.2513, 80.3464], zoom: 10 },
+};
+
+// Component to fix map size issues and handle zoom changes
+function MapController({ selectedDistrict }: { selectedDistrict: string }) {
   const map = useMap();
   
   useEffect(() => {
@@ -20,6 +51,12 @@ function MapResizer() {
     
     return () => clearTimeout(timer);
   }, [map]);
+  
+  useEffect(() => {
+    // Update map view when district changes
+    const coords = DISTRICT_COORDS[selectedDistrict] || DISTRICT_COORDS['All Districts'];
+    map.setView(coords.center, coords.zoom, { animate: true });
+  }, [selectedDistrict, map]);
   
   return null;
 }
@@ -32,8 +69,8 @@ Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export default function MapComponent({ incidents }: MapComponentProps) {
-  const center: LatLngExpression = [6.6828, 80.3992]; // Ratnapura, Sri Lanka
+export default function MapComponent({ incidents, selectedDistrict }: MapComponentProps) {
+  const defaultCoords = DISTRICT_COORDS[selectedDistrict] || DISTRICT_COORDS['All Districts'];
 
   const formatTime = (timestamp: number) => {
     const diff = Date.now() - timestamp;
@@ -52,13 +89,13 @@ export default function MapComponent({ incidents }: MapComponentProps) {
   return (
     <div className="h-[600px] w-full">
       <MapContainer
-        center={center}
-        zoom={12}
+        center={defaultCoords.center}
+        zoom={defaultCoords.zoom}
         style={{ height: '100%', width: '100%' }}
         className="z-0"
         scrollWheelZoom={true}
       >
-        <MapResizer />
+        <MapController selectedDistrict={selectedDistrict} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
