@@ -123,6 +123,21 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
               })()}
             </div>
           )}
+
+          {/* Road Block Route Display */}
+          {incident.type === 'Road Block' && incident.description && incident.description.startsWith('ROUTE:') && (
+            <div className="bg-orange-500/20 border-2 border-orange-500 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-6 h-6 text-orange-400" />
+                <div>
+                  <h3 className="text-lg font-bold text-orange-400">Blocked Route</h3>
+                  <p className="text-slate-300 text-xl mt-2">
+                    {incident.description.replace('ROUTE: ', '')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Images Section */}
           {hasImages && (
             <div className="space-y-3">

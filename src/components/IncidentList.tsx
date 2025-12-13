@@ -230,6 +230,21 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
                     </div>
                   );
                 })()}
+
+                {/* Road Block Route */}
+                {incident.type === 'Road Block' && incident.description && incident.description.startsWith('ROUTE:') && (
+                  <div className="mt-3 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-orange-400" />
+                      <span className="text-sm font-bold text-orange-400">
+                        Blocked Route:
+                      </span>
+                      <span className="text-sm text-slate-300">
+                        {incident.description.replace('ROUTE: ', '')}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
