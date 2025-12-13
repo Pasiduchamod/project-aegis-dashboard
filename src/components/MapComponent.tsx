@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, Tooltip, useMap } from 'react-leaflet';
 import { Icon, LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { Incident } from '../types.js';
+import type { Incident, AidRequest } from '../types.js';
 
 interface MapComponentProps {
   incidents: Incident[];
+  aidRequests?: AidRequest[];
   selectedDistrict: string;
 }
 
@@ -69,7 +70,7 @@ Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export default function MapComponent({ incidents, selectedDistrict }: MapComponentProps) {
+export default function MapComponent({ incidents, aidRequests = [], selectedDistrict }: MapComponentProps) {
   const defaultCoords = DISTRICT_COORDS[selectedDistrict] || DISTRICT_COORDS['All Districts'];
 
   const formatTime = (timestamp: number) => {
@@ -117,6 +118,13 @@ export default function MapComponent({ incidents, selectedDistrict }: MapCompone
                 weight: 2,
               }}
             >
+              <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                <div className="text-xs">
+                  <div className="font-semibold">{incident.type}</div>
+                  <div>Severity: {incident.severity}</div>
+                  <div className="text-gray-600">{formatTime(incident.timestamp)}</div>
+                </div>
+              </Tooltip>
               <Popup>
                 <div className="text-sm">
                   <div className="font-bold text-base mb-1">{incident.type}</div>
@@ -136,6 +144,70 @@ export default function MapComponent({ incidents, selectedDistrict }: MapCompone
                   </div>
                   <div className="text-gray-500 text-xs mt-1">
                     {formatTime(incident.timestamp)}
+                  </div>
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+
+        {/* Render Aid Request Markers */}
+        {aidRequests.map((aidRequest) => {
+          const position: LatLngExpression = [aidRequest.latitude, aidRequest.longitude];
+          const isHighPriority = aidRequest.priority_level >= 4;
+          const aidTypes = JSON.parse(aidRequest.aid_types) as string[];
+
+          return (
+            <CircleMarker
+              key={aidRequest.id}
+              center={position}
+              radius={isHighPriority ? 12 : 8}
+              pathOptions={{
+                fillColor: isHighPriority ? '#3b82f6' : '#60a5fa',
+                fillOpacity: 0.8,
+                color: isHighPriority ? '#2563eb' : '#3b82f6',
+                weight: 2,
+              }}
+            >
+              <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+                <div className="text-xs">
+                  <div className="font-semibold text-blue-600">🆘 {aidTypes[0] || 'Aid Request'}</div>
+                  {aidTypes.length > 1 && (
+                    <div className="text-gray-500">+{aidTypes.length - 1} more</div>
+                  )}
+                  <div>Priority: {aidRequest.priority_level}</div>
+                  <div className="text-gray-600">{formatTime(aidRequest.created_at)}</div>
+                </div>
+              </Tooltip>
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-bold text-base mb-1 text-blue-600">🆘 {aidTypes[0] || 'Aid Request'}</div>
+                  {aidTypes.length > 1 && (
+                    <div className="text-xs text-gray-600 mb-1">
+                      +{aidTypes.length - 1} more type{aidTypes.length > 2 ? 's' : ''}
+                    </div>
+                  )}
+                  <div className="text-gray-600">
+                    Priority: <span className={isHighPriority ? 'text-red-600 font-semibold' : 'text-blue-600'}>{aidRequest.priority_level}</span>
+                  </div>
+                  {aidRequest.description && (
+                    <div className="text-gray-600 text-xs mt-1 italic">
+                      {aidRequest.description.substring(0, 50)}{aidRequest.description.length > 50 ? '...' : ''}
+                    </div>
+                  )}
+                  <div className="text-gray-600 text-xs mt-1">
+                    Status: <span className={
+                      aidRequest.aidStatus === 'completed' ? 'text-green-600 font-semibold' :
+                      aidRequest.aidStatus === 'taking action' ? 'text-blue-600 font-semibold' :
+                      'text-gray-500'
+                    }>
+                      {aidRequest.aidStatus === 'completed' ? '🟢 Completed' :
+                       aidRequest.aidStatus === 'taking action' ? '🟡 Taking Action' :
+                       '🔴 Pending'}
+                    </span>
+                  </div>
+                  <div className="text-gray-500 text-xs mt-1">
+                    {formatTime(aidRequest.created_at)}
                   </div>
                 </div>
               </Popup>

@@ -1,13 +1,15 @@
-import { Droplets, Mountain, Flame, Zap, Cloud, AlertTriangle, Camera } from 'lucide-react';
+import { Droplets, Mountain, Flame, Zap, Cloud, AlertTriangle, Camera, X } from 'lucide-react';
 import type { Incident, ActionStatus } from '../types.js';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
 
 interface IncidentListProps {
   incidents: Incident[];
   onIncidentClick: (incident: Incident) => void;
+  statusFilter?: 'all' | 'critical' | 'completed' | 'pending';
+  onClearFilter?: () => void;
 }
 
-export default function IncidentList({ incidents, onIncidentClick }: IncidentListProps) {
+export default function IncidentList({ incidents, onIncidentClick, statusFilter = 'all', onClearFilter }: IncidentListProps) {
   const getIcon = (type: string) => {
     const iconClass = "w-5 h-5";
     
@@ -67,10 +69,52 @@ export default function IncidentList({ incidents, onIncidentClick }: IncidentLis
     }
   };
 
+  const getFilterLabel = () => {
+    switch (statusFilter) {
+      case 'critical':
+        return 'Critical Alerts';
+      case 'completed':
+        return 'Completed';
+      case 'pending':
+        return 'Pending';
+      default:
+        return null;
+    }
+  };
+
+  const getFilterColor = () => {
+    switch (statusFilter) {
+      case 'critical':
+        return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case 'completed':
+        return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="h-[600px] overflow-y-auto">
-      <div className="divide-y divide-slate-800">
-        {incidents.map((incident) => {
+      {/* Filter Badge */}
+      {statusFilter !== 'all' && onClearFilter && (
+        <div className="p-3 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+          <div className="flex items-center justify-between">
+            <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm font-medium ${getFilterColor()}`}>
+              <span>Filtered by: {getFilterLabel()}</span>
+            </div>
+            <button
+              onClick={onClearFilter}
+              className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="divide-y divide-slate-800">{incidents.map((incident) => {
           // Handle both array and string formats from Firebase
           let imageUrls: string[] = [];
           if (incident.cloudImageUrls) {

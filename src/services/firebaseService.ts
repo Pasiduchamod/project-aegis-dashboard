@@ -163,6 +163,9 @@ export function subscribeToAidRequests(
           priority_level: data.priority_level,
           status: data.status || 'synced',
           aidStatus: data.aidStatus || 'pending',
+          requester_name: data.requester_name || null,
+          contact_number: data.contact_number || null,
+          number_of_people: data.number_of_people || null,
           created_at: data.created_at,
           updated_at: data.updated_at,
         });

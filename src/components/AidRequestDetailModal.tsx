@@ -1,4 +1,4 @@
-import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink, User, Phone, Users } from 'lucide-react';
 import type { AidRequest, AidStatus } from '../types.js';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
 
@@ -113,12 +113,55 @@ export default function AidRequestDetailModal({ aidRequest, onClose }: AidReques
               <select
                 value={aidRequest.aidStatus || 'pending'}
                 onChange={handleStatusChange}
-                className={`px-3 py-2 rounded border bg-slate-900 cursor-pointer text-sm font-medium ${getAidStatusColor(aidRequest.aidStatus)}`}
+                className="px-4 py-2.5 rounded-lg border-2 bg-slate-800 cursor-pointer text-sm font-semibold w-full transition-all hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                style={{
+                  borderColor: aidRequest.aidStatus === 'completed' ? '#4caf50' : 
+                               aidRequest.aidStatus === 'taking action' ? '#2196f3' : '#ffa726',
+                  backgroundColor: aidRequest.aidStatus === 'completed' ? '#1b5e2033' : 
+                                   aidRequest.aidStatus === 'taking action' ? '#2196f333' : '#ffa72633'
+                }}
               >
-                <option value="pending">Pending</option>
-                <option value="taking action">Taking Action</option>
-                <option value="completed">Completed</option>
+                <option value="pending" style={{ backgroundColor: '#1e293b', color: '#ffa726' }}>⏳ Pending</option>
+                <option value="taking action" style={{ backgroundColor: '#1e293b', color: '#2196f3' }}>🚨 Taking Action</option>
+                <option value="completed" style={{ backgroundColor: '#1e293b', color: '#4caf50' }}>✅ Completed</option>
               </select>
+            </div>
+          </div>
+
+          {/* Contact Information */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-400 mb-3">Contact Information</h3>
+            <div className="bg-slate-800/50 p-4 rounded-lg space-y-3">
+              {aidRequest.requester_name && (
+                <div className="flex items-center gap-3">
+                  <User className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <span className="text-xs text-slate-400">Name</span>
+                    <p className="text-white font-medium">{aidRequest.requester_name}</p>
+                  </div>
+                </div>
+              )}
+              {aidRequest.contact_number && (
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <span className="text-xs text-slate-400">Contact Number</span>
+                    <p className="text-white font-medium">{aidRequest.contact_number}</p>
+                  </div>
+                </div>
+              )}
+              {aidRequest.number_of_people && (
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <span className="text-xs text-slate-400">People Needing Aid</span>
+                    <p className="text-white font-medium">{aidRequest.number_of_people} {aidRequest.number_of_people === 1 ? 'person' : 'people'}</p>
+                  </div>
+                </div>
+              )}
+              {!aidRequest.requester_name && !aidRequest.contact_number && !aidRequest.number_of_people && (
+                <p className="text-slate-400 text-sm">No contact information provided</p>
+              )}
             </div>
           </div>
 

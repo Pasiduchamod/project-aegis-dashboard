@@ -26,6 +26,9 @@ export interface AidRequest {
   priority_level: number; // 1-5
   status: IncidentStatus;
   aidStatus?: AidStatus;
+  requester_name?: string ;
+  contact_number?: string ;
+  number_of_people?: number ;
   created_at: number;
   updated_at: number;
 }

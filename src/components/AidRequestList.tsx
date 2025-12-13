@@ -1,13 +1,15 @@
-import { MapPin, AlertCircle, Clock } from 'lucide-react';
+import { MapPin, AlertCircle, Clock, X, Users } from 'lucide-react';
 import type { AidRequest, AidStatus } from '../types.js';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
 
 interface AidRequestListProps {
   aidRequests: AidRequest[];
   onAidRequestClick: (aidRequest: AidRequest) => void;
+  statusFilter?: 'all' | 'critical' | 'completed' | 'pending';
+  onClearFilter?: () => void;
 }
 
-export default function AidRequestList({ aidRequests, onAidRequestClick }: AidRequestListProps) {
+export default function AidRequestList({ aidRequests, onAidRequestClick, statusFilter = 'all', onClearFilter }: AidRequestListProps) {
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -56,8 +58,51 @@ export default function AidRequestList({ aidRequests, onAidRequestClick }: AidRe
     }
   };
 
+  const getFilterLabel = () => {
+    switch (statusFilter) {
+      case 'critical':
+        return 'High Priority';
+      case 'completed':
+        return 'Completed';
+      case 'pending':
+        return 'Pending';
+      default:
+        return null;
+    }
+  };
+
+  const getFilterColor = () => {
+    switch (statusFilter) {
+      case 'critical':
+        return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case 'completed':
+        return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="h-[600px] overflow-y-auto">
+      {/* Filter Badge */}
+      {statusFilter !== 'all' && onClearFilter && (
+        <div className="p-3 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+          <div className="flex items-center justify-between">
+            <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm font-medium ${getFilterColor()}`}>
+              <span>Filtered by: {getFilterLabel()}</span>
+            </div>
+            <button
+              onClick={onClearFilter}
+              className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
       <div className="divide-y divide-slate-800">
         {aidRequests.map((aidRequest) => {
           // Parse aid types
@@ -124,6 +169,14 @@ export default function AidRequestList({ aidRequests, onAidRequestClick }: AidRe
                       <MapPin className="w-3 h-3" />
                       {aidRequest.latitude.toFixed(4)}, {aidRequest.longitude.toFixed(4)}
                     </span>
+
+                    {/* People Count */}
+                    {(aidRequest.number_of_people !== null && aidRequest.number_of_people !== undefined && aidRequest.number_of_people > 0) && (
+                      <span className="text-xs px-2 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/50 rounded flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {aidRequest.number_of_people} {aidRequest.number_of_people === 1 ? 'person' : 'people'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Description Preview */}

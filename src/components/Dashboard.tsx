@@ -77,25 +77,49 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
   const [selectedCamp, setSelectedCamp] = useState<DetentionCamp | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('incidents');
   const [showAddCampModal, setShowAddCampModal] = useState(false);
+  const [incidentStatusFilter, setIncidentStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
+  const [aidStatusFilter, setAidStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
   
-  const filteredIncidents = selectedDistrict === 'All Districts' 
+  // Filter by district first
+  const districtFilteredIncidents = selectedDistrict === 'All Districts' 
     ? incidents 
     : incidents.filter(i => isInDistrict(i.latitude, i.longitude, selectedDistrict));
   
-  const filteredAidRequests = selectedDistrict === 'All Districts'
+  const districtFilteredAidRequests = selectedDistrict === 'All Districts'
     ? aidRequests
     : aidRequests.filter(ar => isInDistrict(ar.latitude, ar.longitude, selectedDistrict));
+  
+  // Calculate counts from district-filtered data (before status filter)
+  const criticalCount = districtFilteredIncidents.filter((i) => i.severity >= 4).length;
+  const criticalAidCount = districtFilteredAidRequests.filter((ar) => ar.priority_level >= 4).length;
+  const completedIncidents = districtFilteredIncidents.filter((i) => i.actionStatus === 'completed').length;
+  const pendingIncidents = districtFilteredIncidents.filter((i) => i.actionStatus === 'pending').length;
+  const completedAidRequests = districtFilteredAidRequests.filter((ar) => ar.aidStatus === 'completed').length;
+  const pendingAidRequests = districtFilteredAidRequests.filter((ar) => ar.aidStatus === 'pending').length;
+  
+  // Then apply status filter for display
+  let filteredIncidents = districtFilteredIncidents;
+  if (incidentStatusFilter === 'critical') {
+    filteredIncidents = filteredIncidents.filter(i => i.severity >= 4);
+  } else if (incidentStatusFilter === 'completed') {
+    filteredIncidents = filteredIncidents.filter(i => i.actionStatus === 'completed');
+  } else if (incidentStatusFilter === 'pending') {
+    filteredIncidents = filteredIncidents.filter(i => i.actionStatus === 'pending');
+  }
+  
+  let filteredAidRequests = districtFilteredAidRequests;
+  if (aidStatusFilter === 'critical') {
+    filteredAidRequests = filteredAidRequests.filter(ar => ar.priority_level >= 4);
+  } else if (aidStatusFilter === 'completed') {
+    filteredAidRequests = filteredAidRequests.filter(ar => ar.aidStatus === 'completed');
+  } else if (aidStatusFilter === 'pending') {
+    filteredAidRequests = filteredAidRequests.filter(ar => ar.aidStatus === 'pending');
+  }
   
   const filteredCamps = selectedDistrict === 'All Districts'
     ? detentionCamps
     : detentionCamps.filter(camp => isInDistrict(camp.latitude, camp.longitude, selectedDistrict));
   
-  const criticalCount = filteredIncidents.filter((i) => i.severity >= 4).length;
-  const criticalAidCount = filteredAidRequests.filter((ar) => ar.priority_level >= 4).length;
-  const completedIncidents = filteredIncidents.filter((i) => i.actionStatus === 'completed').length;
-  const pendingIncidents = filteredIncidents.filter((i) => i.actionStatus === 'pending').length;
-  const completedAidRequests = filteredAidRequests.filter((ar) => ar.aidStatus === 'completed').length;
-  const pendingAidRequests = filteredAidRequests.filter((ar) => ar.aidStatus === 'pending').length;
   const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational').length;
   const fullCamps = filteredCamps.filter((camp) => camp.campStatus === 'full').length;
   const lastUpdate = new Date();
@@ -190,22 +214,43 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             </div>
 
             {/* Critical Alerts */}
-            <div className="bg-slate-900 border border-red-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setIncidentStatusFilter(incidentStatusFilter === 'critical' ? 'all' : 'critical')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                incidentStatusFilter === 'critical' 
+                  ? 'border-red-500 shadow-lg shadow-red-500/20' 
+                  : 'border-red-900/50 hover:border-red-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">Critical Alerts</div>
               <div className="text-3xl font-bold text-red-500">{criticalCount}</div>
-            </div>
+            </button>
 
             {/* Completed */}
-            <div className="bg-slate-900 border border-green-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setIncidentStatusFilter(incidentStatusFilter === 'completed' ? 'all' : 'completed')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                incidentStatusFilter === 'completed' 
+                  ? 'border-green-500 shadow-lg shadow-green-500/20' 
+                  : 'border-green-900/50 hover:border-green-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">Completed</div>
               <div className="text-3xl font-bold text-green-500">{completedIncidents}</div>
-            </div>
+            </button>
 
             {/* Pending */}
-            <div className="bg-slate-900 border border-yellow-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setIncidentStatusFilter(incidentStatusFilter === 'pending' ? 'all' : 'pending')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                incidentStatusFilter === 'pending' 
+                  ? 'border-yellow-500 shadow-lg shadow-yellow-500/20' 
+                  : 'border-yellow-900/50 hover:border-yellow-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">Pending</div>
               <div className="text-3xl font-bold text-yellow-500">{pendingIncidents}</div>
-            </div>
+            </button>
 
             {/* Last Updated */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
@@ -224,22 +269,43 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             </div>
 
             {/* Critical Priority */}
-            <div className="bg-slate-900 border border-red-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setAidStatusFilter(aidStatusFilter === 'critical' ? 'all' : 'critical')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                aidStatusFilter === 'critical' 
+                  ? 'border-red-500 shadow-lg shadow-red-500/20' 
+                  : 'border-red-900/50 hover:border-red-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">High Priority</div>
               <div className="text-3xl font-bold text-red-500">{criticalAidCount}</div>
-            </div>
+            </button>
 
             {/* Completed */}
-            <div className="bg-slate-900 border border-green-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setAidStatusFilter(aidStatusFilter === 'completed' ? 'all' : 'completed')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                aidStatusFilter === 'completed' 
+                  ? 'border-green-500 shadow-lg shadow-green-500/20' 
+                  : 'border-green-900/50 hover:border-green-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">Completed</div>
               <div className="text-3xl font-bold text-green-500">{completedAidRequests}</div>
-            </div>
+            </button>
 
             {/* Pending */}
-            <div className="bg-slate-900 border border-yellow-900/50 rounded-lg p-6">
+            <button
+              onClick={() => setAidStatusFilter(aidStatusFilter === 'pending' ? 'all' : 'pending')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                aidStatusFilter === 'pending' 
+                  ? 'border-yellow-500 shadow-lg shadow-yellow-500/20' 
+                  : 'border-yellow-900/50 hover:border-yellow-700'
+              }`}
+            >
               <div className="text-sm text-slate-400 mb-1">Pending</div>
               <div className="text-3xl font-bold text-yellow-500">{pendingAidRequests}</div>
-            </div>
+            </button>
 
             {/* Last Updated */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
@@ -309,6 +375,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             </div>
             <MapComponent 
               incidents={activeTab === 'incidents' ? filteredIncidents : []} 
+              aidRequests={activeTab === 'aidRequests' ? filteredAidRequests : []}
               selectedDistrict={selectedDistrict} 
             />
           </div>
@@ -332,9 +399,19 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
               )}
             </div>
             {activeTab === 'incidents' ? (
-              <IncidentList incidents={filteredIncidents} onIncidentClick={setSelectedIncident} />
+              <IncidentList 
+                incidents={filteredIncidents} 
+                onIncidentClick={setSelectedIncident}
+                statusFilter={incidentStatusFilter}
+                onClearFilter={() => setIncidentStatusFilter('all')}
+              />
             ) : activeTab === 'aidRequests' ? (
-              <AidRequestList aidRequests={filteredAidRequests} onAidRequestClick={setSelectedAidRequest} />
+              <AidRequestList 
+                aidRequests={filteredAidRequests} 
+                onAidRequestClick={setSelectedAidRequest}
+                statusFilter={aidStatusFilter}
+                onClearFilter={() => setAidStatusFilter('all')}
+              />
             ) : (
               <DetentionCampList camps={filteredCamps} onCampClick={setSelectedCamp} />
             )}
