@@ -1,7 +1,7 @@
-import { Activity } from 'lucide-react';
 import type { Incident } from '../types.js';
 import MapComponent from './MapComponent';
 import IncidentList from './IncidentList';
+import logo from '../assets/logo.png';
 
 interface DashboardProps {
   incidents: Incident[];
@@ -18,8 +18,12 @@ export default function Dashboard({ incidents, isLive }: DashboardProps) {
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Activity className="w-8 h-8 text-red-500" />
-            <h1 className="text-2xl font-bold">Project Aegis HQ</h1>
+            <img 
+              src={logo} 
+              alt="LankaSafe" 
+              className="w-12 h-12 rounded-full object-cover border-2 border-red-500 shadow-lg shadow-red-500/50"
+            />
+            <h1 className="text-2xl font-bold">LankaSafe HQ</h1>
           </div>
           
           {/* Live Sync Indicator */}
