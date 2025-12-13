@@ -9,13 +9,14 @@ import DetentionCampList from './DetentionCampList';
 import DetentionCampDetailModal from './DetentionCampDetailModal';
 import AddDetentionCampModal from './AddDetentionCampModal';
 import logo from '../assets/logo.png';
-import { AlertTriangle, HandHeart, Building2, Plus } from 'lucide-react';
+import { AlertTriangle, HandHeart, Building2, Plus, LogOut } from 'lucide-react';
 
 interface DashboardProps {
   incidents: Incident[];
   aidRequests: AidRequest[];
   detentionCamps: DetentionCamp[];
   isLive: boolean;
+  onLogout?: () => void;
 }
 
 type TabType = 'incidents' | 'aidRequests' | 'detentionCamps';
@@ -70,7 +71,7 @@ const isInDistrict = (lat: number, lng: number, district: string): boolean => {
   return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 };
 
-export default function Dashboard({ incidents, aidRequests, detentionCamps, isLive }: DashboardProps) {
+export default function Dashboard({ incidents, aidRequests, detentionCamps, isLive, onLogout }: DashboardProps) {
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [selectedAidRequest, setSelectedAidRequest] = useState<AidRequest | null>(null);
@@ -138,10 +139,22 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             <h1 className="text-2xl font-bold">LankaSafe HQ</h1>
           </div>
           
-          {/* Live Sync Indicator */}
-          <div className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
-            <span className="text-sm font-medium">{isLive ? 'Live Sync' : 'Paused'}</span>
+          {/* Right Side - Live Sync Indicator and Logout */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+              <span className="text-sm font-medium">{isLive ? 'Live Sync' : 'Paused'}</span>
+            </div>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
