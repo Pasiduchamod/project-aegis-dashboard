@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
-import type { Incident, AidRequest, DetentionCamp } from './types.js';
-import { subscribeToIncidents, subscribeToAidRequests, subscribeToDetentionCamps } from './services/firebaseService.js';
+import { initEmailService } from './services/emailService.js';
+import { subscribeToAidRequests, subscribeToDetentionCamps, subscribeToIncidents } from './services/firebaseService.js';
+import type { AidRequest, DetentionCamp, Incident } from './types.js';
 
 // Simple admin credentials (in production, use proper authentication)
 const ADMIN_CREDENTIALS = {
@@ -26,6 +27,9 @@ function App() {
     if (savedAuth === 'true') {
       setIsAuthenticated(true);
     }
+    
+    // Initialize email service
+    initEmailService();
   }, []);
 
   const handleLogin = (username: string, password: string) => {

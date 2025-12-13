@@ -1,7 +1,8 @@
-import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink, User, Phone, Users, Mail } from 'lucide-react';
-import type { AidRequest, AidStatus } from '../types.js';
+import { AlertCircle, Calendar, ExternalLink, FileText, Mail, MapPin, Phone, User, Users, X } from 'lucide-react';
+import { sendAidRequestEmail } from '../services/emailService.js';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
-import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatAidRequestEmail, sendEmail } from '../utils/emailUtils.js';
+import type { AidRequest, AidStatus } from '../types.js';
+import { getDistrictFromCoordinates } from '../utils/emailUtils.js';
 
 interface AidRequestDetailModalProps {
   aidRequest: AidRequest | null;
@@ -64,17 +65,19 @@ export default function AidRequestDetailModal({ aidRequest, onClose }: AidReques
     }
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     const district = getDistrictFromCoordinates(aidRequest.latitude, aidRequest.longitude);
-    const email = getDistrictOfficerEmail(district);
     
-    if (!email) {
+    if (district === 'Unknown') {
       alert('Unable to determine district from coordinates');
       return;
     }
     
-    const { subject, body } = formatAidRequestEmail(aidRequest);
-    sendEmail(email, subject, body);
+    try {
+      await sendAidRequestEmail(aidRequest);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+    }
   };
   const googleMapsUrl = `https://www.google.com/maps?q=${aidRequest.latitude},${aidRequest.longitude}`;
 

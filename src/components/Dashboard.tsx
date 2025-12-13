@@ -1,15 +1,15 @@
+import { AlertTriangle, Building2, HandHeart, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import type { Incident, AidRequest, DetentionCamp } from '../types.js';
-import MapComponent from './MapComponent';
-import IncidentList from './IncidentList';
-import IncidentDetailModal from './IncidentDetailModal';
-import AidRequestList from './AidRequestList';
-import AidRequestDetailModal from './AidRequestDetailModal';
-import DetentionCampList from './DetentionCampList';
-import DetentionCampDetailModal from './DetentionCampDetailModal';
-import AddDetentionCampModal from './AddDetentionCampModal';
 import logo from '../assets/logo.png';
-import { AlertTriangle, HandHeart, Building2, Plus, LogOut } from 'lucide-react';
+import type { AidRequest, DetentionCamp, Incident } from '../types.js';
+import AddDetentionCampModal from './AddDetentionCampModal';
+import AidRequestDetailModal from './AidRequestDetailModal';
+import AidRequestList from './AidRequestList';
+import DetentionCampDetailModal from './DetentionCampDetailModal';
+import DetentionCampList from './DetentionCampList';
+import IncidentDetailModal from './IncidentDetailModal';
+import IncidentList from './IncidentList';
+import MapComponent from './MapComponent';
 
 interface DashboardProps {
   incidents: Incident[];
@@ -80,6 +80,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
   const [showAddCampModal, setShowAddCampModal] = useState(false);
   const [incidentStatusFilter, setIncidentStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
   const [aidStatusFilter, setAidStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
+  const [selectedMapLocation, setSelectedMapLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Filter by district first
   const districtFilteredIncidents = selectedDistrict === 'All Districts' 
@@ -389,7 +390,16 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             <MapComponent 
               incidents={activeTab === 'incidents' ? filteredIncidents : []} 
               aidRequests={activeTab === 'aidRequests' ? filteredAidRequests : []}
-              selectedDistrict={selectedDistrict} 
+              camps={activeTab === 'detentionCamps' ? filteredCamps : []}
+              selectedDistrict={selectedDistrict}
+              onMapClick={(lat, lng) => {
+                if (activeTab === 'detentionCamps') {
+                  setSelectedMapLocation({ lat, lng });
+                  setShowAddCampModal(true);
+                }
+              }}
+              enableMapClick={activeTab === 'detentionCamps'}
+              tempMarkerLocation={selectedMapLocation}
             />
           </div>
         </div>
@@ -397,18 +407,20 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
         {/* Feed (33% width on desktop) */}
         <div className="lg:col-span-1">
           <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {activeTab === 'incidents' ? 'Recent Reports' : activeTab === 'aidRequests' ? 'Recent Aid Requests' : 'Registered Camps'}
-              </h2>
+            <div className="p-4 border-b border-slate-800">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">
+                  {activeTab === 'incidents' ? 'Recent Reports' : activeTab === 'aidRequests' ? 'Recent Aid Requests' : 'Registered Camps'}
+                </h2>
+              </div>
               {activeTab === 'detentionCamps' && (
-                <button
-                  onClick={() => setShowAddCampModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Camp
-                </button>
+                <div className="mt-3 flex items-center gap-2 text-sm text-blue-400 bg-blue-500/10 border border-blue-500/30 rounded-lg px-3 py-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>Click anywhere on the map to add a new camp</span>
+                </div>
               )}
             </div>
             {activeTab === 'incidents' ? (
@@ -447,10 +459,15 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
       />
       {showAddCampModal && (
         <AddDetentionCampModal 
-          onClose={() => setShowAddCampModal(false)} 
+          onClose={() => {
+            setShowAddCampModal(false);
+            setSelectedMapLocation(null);
+          }} 
           onSuccess={() => {
-            // Modal will close automatically, camps list will update via Firebase subscription
+            setShowAddCampModal(false);
+            setSelectedMapLocation(null);
           }}
+          initialLocation={selectedMapLocation}
         />
       )}
     </div>

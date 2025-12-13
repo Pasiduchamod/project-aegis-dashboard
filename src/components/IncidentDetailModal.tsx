@@ -1,7 +1,8 @@
-import { X, MapPin, Clock, AlertCircle, Image as ImageIcon, Mail, Users, AlertTriangle } from 'lucide-react';
-import type { Incident, ActionStatus } from '../types.js';
+import { AlertCircle, AlertTriangle, Clock, Image as ImageIcon, Mail, MapPin, Users, X } from 'lucide-react';
+import { sendIncidentEmail } from '../services/emailService.js';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
-import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatIncidentEmail, sendEmail } from '../utils/emailUtils.js';
+import type { ActionStatus, Incident } from '../types.js';
+import { getDistrictFromCoordinates } from '../utils/emailUtils.js';
 
 interface IncidentDetailModalProps {
   incident: Incident | null;
@@ -47,17 +48,19 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
     }
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     const district = getDistrictFromCoordinates(incident.latitude, incident.longitude);
-    const email = getDistrictOfficerEmail(district);
     
-    if (!email) {
+    if (district === 'Unknown') {
       alert('Unable to determine district from coordinates');
       return;
     }
     
-    const { subject, body } = formatIncidentEmail(incident);
-    sendEmail(email, subject, body);
+    try {
+      await sendIncidentEmail(incident);
+    } catch (error) {
+      console.error('Failed to send email:', error);
+    }
   };
 
   // Handle both array and string formats from Firebase
@@ -105,19 +108,12 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
               {incident.description && (() => {
                 const parts = incident.description.split(' | ');
                 const trappedCount = parts[0]?.replace('TRAPPED PEOPLE: ', '') || 'Unknown';
-                const details = parts[1]?.replace('DETAILS: ', '') || 'No details provided';
                 return (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-5 h-5 text-red-400" />
-                      <p className="text-red-300 font-semibold">
-                        Number of Trapped People: <span className="text-2xl text-red-400">{trappedCount}</span>
-                      </p>
-                    </div>
-                    <div className="bg-slate-900/50 rounded-lg p-3">
-                      <p className="text-slate-300 font-semibold mb-1">Situation Details:</p>
-                      <p className="text-slate-300">{details}</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-red-500" />
+                    <p className="text-red-300 font-semibold">
+                      Number of Trapped People: <span className="text-2xl font-bold text-red-500">{trappedCount}</span>
+                    </p>
                   </div>
                 );
               })()}

@@ -1,13 +1,17 @@
-import { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, Tooltip, useMap } from 'react-leaflet';
-import { Icon, LatLngExpression, LatLngBoundsExpression } from 'leaflet';
+import { Icon, LatLngExpression, divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { Incident, AidRequest } from '../types.js';
+import { useEffect } from 'react';
+import { CircleMarker, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import type { AidRequest, DetentionCamp, Incident } from '../types.js';
 
 interface MapComponentProps {
   incidents: Incident[];
   aidRequests?: AidRequest[];
+  camps?: DetentionCamp[];
   selectedDistrict: string;
+  onMapClick?: (lat: number, lng: number) => void;
+  enableMapClick?: boolean;
+  tempMarkerLocation?: { lat: number; lng: number } | null;
 }
 
 // District coordinates for Sri Lanka
@@ -40,6 +44,31 @@ const DISTRICT_COORDS: { [key: string]: { center: LatLngExpression; zoom: number
   'Kegalle': { center: [7.2513, 80.3464], zoom: 10 },
 };
 
+// Component to handle map clicks
+function MapClickHandler({ onClick, enabled }: { onClick?: (lat: number, lng: number) => void; enabled?: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (enabled) {
+      map.getContainer().style.cursor = 'crosshair';
+    } else {
+      map.getContainer().style.cursor = '';
+    }
+    return () => {
+      map.getContainer().style.cursor = '';
+    };
+  }, [enabled, map]);
+
+  useMapEvents({
+    click(e) {
+      if (enabled && onClick) {
+        onClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+}
+
 // Component to fix map size issues and handle zoom changes
 function MapController({ selectedDistrict }: { selectedDistrict: string }) {
   const map = useMap();
@@ -70,7 +99,58 @@ Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export default function MapComponent({ incidents, aidRequests = [], selectedDistrict }: MapComponentProps) {
+// Create location pin icon for new camp marker
+const createLocationPinIcon = () => {
+  return divIcon({
+    className: 'custom-location-pin',
+    html: `
+      <div style="
+        position: relative;
+        width: 40px;
+        height: 40px;
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="#3b82f6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3" fill="white"></circle>
+        </svg>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [10, -40],
+  });
+};
+
+// Create custom camp icon
+const createCampIcon = (status: string) => {
+  const color = status === 'operational' ? '#10b981' : status === 'full' ? '#f59e0b' : '#ef4444';
+  return divIcon({
+    className: 'custom-camp-icon',
+    html: `
+      <div style="
+        background-color: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      ">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -16],
+  });
+};
+
+export default function MapComponent({ incidents, aidRequests = [], camps = [], selectedDistrict, onMapClick, enableMapClick = false, tempMarkerLocation }: MapComponentProps) {
   const defaultCoords = DISTRICT_COORDS[selectedDistrict] || DISTRICT_COORDS['All Districts'];
 
   const formatTime = (timestamp: number) => {
@@ -97,6 +177,7 @@ export default function MapComponent({ incidents, aidRequests = [], selectedDist
         scrollWheelZoom={true}
       >
         <MapController selectedDistrict={selectedDistrict} />
+        <MapClickHandler onClick={onMapClick} enabled={enableMapClick} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -214,6 +295,126 @@ export default function MapComponent({ incidents, aidRequests = [], selectedDist
             </CircleMarker>
           );
         })}
+
+        {/* Render Detention Camp Markers */}
+        {camps.map((camp) => {
+          const position: LatLngExpression = [camp.latitude, camp.longitude];
+          const occupancyPercentage = (camp.current_occupancy / camp.capacity) * 100;
+          let facilities: string[] = [];
+          try {
+            facilities = JSON.parse(camp.facilities);
+          } catch {
+            facilities = [];
+          }
+
+          return (
+            <Marker
+              key={camp.id}
+              position={position}
+              icon={createCampIcon(camp.campStatus)}
+            >
+              <Tooltip direction="top" offset={[0, -16]} opacity={0.9}>
+                <div className="text-xs">
+                  <div className="font-semibold">🏠 {camp.name}</div>
+                  <div>Occupancy: {camp.current_occupancy}/{camp.capacity}</div>
+                  <div className={
+                    camp.campStatus === 'operational' ? 'text-green-600' :
+                    camp.campStatus === 'full' ? 'text-orange-600' :
+                    'text-red-600'
+                  }>
+                    {camp.campStatus === 'operational' ? '✓ Operational' :
+                     camp.campStatus === 'full' ? '⚠ Full' :
+                     '✗ Closed'}
+                  </div>
+                </div>
+              </Tooltip>
+              <Popup>
+                <div className="text-sm min-w-[200px]">
+                  <div className="font-bold text-base mb-2 flex items-center gap-2">
+                    <span>🏠</span>
+                    {camp.name}
+                  </div>
+                  
+                  <div className="space-y-1 mb-2">
+                    <div className="text-gray-600">
+                      <span className="font-semibold">Status:</span>{' '}
+                      <span className={
+                        camp.campStatus === 'operational' ? 'text-green-600 font-semibold' :
+                        camp.campStatus === 'full' ? 'text-orange-600 font-semibold' :
+                        'text-red-600 font-semibold'
+                      }>
+                        {camp.campStatus === 'operational' ? '🟢 Operational' :
+                         camp.campStatus === 'full' ? '🟡 Full' :
+                         '🔴 Closed'}
+                      </span>
+                    </div>
+                    
+                    <div className="text-gray-600">
+                      <span className="font-semibold">Capacity:</span> {camp.current_occupancy}/{camp.capacity}
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          occupancyPercentage >= 90 ? 'bg-red-500' :
+                          occupancyPercentage >= 70 ? 'bg-orange-500' :
+                          'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(occupancyPercentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {facilities.length > 0 && (
+                    <div className="text-gray-600 text-xs mb-2">
+                      <div className="font-semibold mb-1">Facilities:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {facilities.slice(0, 3).map(facility => (
+                          <span key={facility} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">
+                            {facility}
+                          </span>
+                        ))}
+                        {facilities.length > 3 && (
+                          <span className="text-gray-500">+{facilities.length - 3} more</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {camp.contact_person && (
+                    <div className="text-gray-600 text-xs mt-2 pt-2 border-t">
+                      <div><span className="font-semibold">Contact:</span> {camp.contact_person}</div>
+                      {camp.contact_phone && <div>{camp.contact_phone}</div>}
+                    </div>
+                  )}
+
+                  {camp.description && (
+                    <div className="text-gray-500 text-xs mt-2 italic">
+                      {camp.description}
+                    </div>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+
+        {/* Temporary marker for new camp location */}
+        {tempMarkerLocation && (
+          <Marker
+            position={[tempMarkerLocation.lat, tempMarkerLocation.lng]}
+            icon={createLocationPinIcon()}
+          >
+            <Popup>
+              <div className="text-sm">
+                <div className="font-bold text-blue-600 mb-1">📍 New Camp Location</div>
+                <div className="text-xs text-gray-600">
+                  {tempMarkerLocation.lat.toFixed(6)}, {tempMarkerLocation.lng.toFixed(6)}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   );

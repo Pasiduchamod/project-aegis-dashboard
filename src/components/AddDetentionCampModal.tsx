@@ -1,10 +1,11 @@
-import { X, MapPin, Users, Building2, Phone, User, FileText } from 'lucide-react';
+import { Building2, FileText, MapPin, Phone, User, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import { createDetentionCamp } from '../services/firebaseService.js';
 
 interface AddDetentionCampModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  initialLocation?: { lat: number; lng: number } | null;
 }
 
 const FACILITY_OPTIONS = [
@@ -20,11 +21,20 @@ const FACILITY_OPTIONS = [
   'Registration Office',
 ];
 
-export default function AddDetentionCampModal({ onClose, onSuccess }: AddDetentionCampModalProps) {
+const DISTRICTS = [
+  'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+  'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar',
+  'Vavuniya', 'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee',
+  'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa', 'Badulla',
+  'Monaragala', 'Ratnapura', 'Kegalle'
+];
+
+export default function AddDetentionCampModal({ onClose, onSuccess, initialLocation }: AddDetentionCampModalProps) {
   const [formData, setFormData] = useState({
     name: '',
-    latitude: '',
-    longitude: '',
+    district: '',
+    latitude: initialLocation?.lat.toString() || '',
+    longitude: initialLocation?.lng.toString() || '',
     capacity: '',
     facilities: [] as string[],
     contact_person: '',
@@ -52,8 +62,12 @@ export default function AddDetentionCampModal({ onClose, onSuccess }: AddDetenti
       setError('Camp name is required');
       return;
     }
+    if (!formData.district) {
+      setError('District is required');
+      return;
+    }
     if (!formData.latitude || !formData.longitude) {
-      setError('Latitude and longitude are required');
+      setError('Location is required');
       return;
     }
     if (!formData.capacity || parseInt(formData.capacity) <= 0) {
@@ -97,7 +111,7 @@ export default function AddDetentionCampModal({ onClose, onSuccess }: AddDetenti
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-end z-50 p-4 pr-8">
       <div className="bg-slate-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
@@ -135,6 +149,24 @@ export default function AddDetentionCampModal({ onClose, onSuccess }: AddDetenti
               placeholder="e.g., Central Relief Camp"
               required
             />
+          </div>
+
+          {/* District Selection */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-400 mb-2">
+              District <span className="text-red-400">*</span>
+            </label>
+            <select
+              value={formData.district}
+              onChange={(e) => setFormData(prev => ({ ...prev, district: e.target.value }))}
+              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-purple-500"
+              required
+            >
+              <option value="">Select District</option>
+              {DISTRICTS.map(district => (
+                <option key={district} value={district}>{district}</option>
+              ))}
+            </select>
           </div>
 
           {/* Coordinates */}

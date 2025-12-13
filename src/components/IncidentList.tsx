@@ -1,6 +1,7 @@
-import { Droplets, Mountain, Flame, Zap, Cloud, AlertTriangle, Camera, X, Users } from 'lucide-react';
-import type { Incident, ActionStatus } from '../types.js';
+import { AlertTriangle, Camera, Cloud, Droplets, Filter, Flame, Mountain, Users, X, Zap } from 'lucide-react';
+import React from 'react';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
+import type { ActionStatus, Incident } from '../types.js';
 
 interface IncidentListProps {
   incidents: Incident[];
@@ -9,7 +10,11 @@ interface IncidentListProps {
   onClearFilter?: () => void;
 }
 
+type IncidentType = 'all' | 'flood' | 'landslide' | 'fire' | 'earthquake' | 'storm' | 'trapped civilians' | 'road block' | 'power line down';
+
 export default function IncidentList({ incidents, onIncidentClick, statusFilter = 'all', onClearFilter }: IncidentListProps) {
+  const [typeFilter, setTypeFilter] = React.useState<IncidentType>('all');
+
   const getIcon = (type: string) => {
     const iconClass = "w-5 h-5";
     
@@ -100,26 +105,67 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
     }
   };
 
+  // Filter incidents by type
+  const displayedIncidents = typeFilter === 'all' 
+    ? incidents 
+    : incidents.filter(incident => incident.type.toLowerCase() === typeFilter.toLowerCase());
+
   return (
     <div className="h-[600px] overflow-y-auto">
-      {/* Filter Badge */}
-      {statusFilter !== 'all' && onClearFilter && (
-        <div className="p-3 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
-          <div className="flex items-center justify-between">
-            <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-full text-sm font-medium ${getFilterColor()}`}>
-              <span>Filtered by: {getFilterLabel()}</span>
+      {/* Filter Controls */}
+      <div className="sticky top-0 bg-slate-900 z-10 border-b border-slate-700">
+        {/* Status Filter Badge */}
+        {statusFilter !== 'all' && onClearFilter && (
+          <div className="p-4 border-b border-slate-700">
+            <div className="flex items-center justify-between">
+              <div className={`flex items-center gap-2 px-4 py-2 border-2 rounded-lg text-sm font-semibold shadow-lg ${getFilterColor()}`}>
+                <span>📌 Status: {getFilterLabel()}</span>
+              </div>
+              <button
+                onClick={onClearFilter}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-md"
+              >
+                <X className="w-4 h-4" />
+                Clear
+              </button>
             </div>
-            <button
-              onClick={onClearFilter}
-              className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-colors"
+          </div>
+        )}
+        
+        {/* Type Filter Dropdown */}
+        <div className="p-4">
+          <div className="flex items-center gap-3">
+            <Filter className="w-5 h-5 text-slate-400" />
+            <label className="text-sm font-semibold text-slate-300">Filter by Type:</label>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value as IncidentType)}
+              className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm font-medium focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4" />
-              Clear
-            </button>
+              <option value="all">All Types ({incidents.length})</option>
+              <option value="trapped civilians">👥 Trapped Civilians</option>
+              <option value="flood">💧 Flood</option>
+              {/* <option value="fire">🔥 Fire</option> */}
+              <option value="landslide">⛰️ Landslide</option>
+              {/* <option value="earthquake">⚡ Earthquake</option> */}
+              {/* <option value="storm">🌩️ Storm</option> */}
+              <option value="road block">🚧 Road Block</option>
+              <option value="power line down">⚡ Power Line Down</option>
+            </select>
+            {typeFilter !== 'all' && (
+              <button
+                onClick={() => setTypeFilter('all')}
+                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
-      )}
-      <div className="divide-y divide-slate-800">{incidents.map((incident) => {
+      </div>
+      
+      <div className="p-4">
+      <div className="space-y-4">{displayedIncidents.map((incident) => {
           // Handle both array and string formats from Firebase
           let imageUrls: string[] = [];
           if (incident.cloudImageUrls) {
@@ -141,42 +187,44 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
           return (
           <div
             key={incident.id}
-            className={`p-4 hover:bg-slate-800/50 transition-colors cursor-pointer ${
-              isTrappedCivilians ? 'border-2 border-red-500 bg-red-500/10 rounded-lg mb-2' : ''
+            className={`p-5 rounded-xl border transition-all cursor-pointer shadow-lg ${
+              isTrappedCivilians 
+                ? 'border-red-500 bg-red-500/10 hover:bg-red-500/20' 
+                : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800'
             }`}
             onClick={() => onIncidentClick(incident)}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-4">
               {/* Icon */}
-              <div className={`p-2 rounded-lg ${
+              <div className={`p-3 rounded-xl shadow-md ${
                 isTrappedCivilians 
                   ? 'bg-red-500/30 text-red-400 border-2 border-red-500' 
                   : incident.severity >= 4 
-                  ? 'bg-red-500/20 text-red-400' 
-                  : 'bg-orange-500/20 text-orange-400'
+                  ? 'bg-red-500/30 text-red-400' 
+                  : 'bg-orange-500/30 text-orange-400'
               }`}>
                 {getIcon(incident.type)}
               </div>
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-sm">{incident.type}</h3>
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-base text-white">{incident.type}</h3>
                     {isTrappedCivilians && (
-                      <span className="text-xs px-2 py-0.5 rounded bg-red-500 text-white font-bold animate-pulse">
+                      <span className="text-xs px-2.5 py-1 rounded-md bg-red-500 text-white font-bold animate-pulse shadow-lg">
                         CRITICAL
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-400 whitespace-nowrap">
+                  <span className="text-sm text-slate-400 whitespace-nowrap font-medium">
                     {formatTime(incident.timestamp)}
                   </span>
                 </div>
 
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <div className="mt-3 flex items-center gap-2.5 flex-wrap">
                   {/* Severity Badge */}
-                  <span className={`text-xs px-2 py-1 rounded border ${getSeverityColor(incident.severity)}`}>
+                  <span className={`text-sm px-3 py-1.5 rounded-lg border font-semibold ${getSeverityColor(incident.severity)}`}>
                     Severity {incident.severity}
                   </span>
                   
@@ -188,7 +236,7 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
                       handleStatusChange(incident.id, e.target.value as ActionStatus);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className={`text-xs px-2 py-1 rounded border cursor-pointer ${getActionStatusColor(incident.actionStatus)} bg-slate-800`}
+                    className={`text-sm px-3 py-1.5 rounded-lg border cursor-pointer font-semibold ${getActionStatusColor(incident.actionStatus)} bg-slate-800`}
                   >
                     <option value="pending" className="bg-slate-800">🔴 Pending</option>
                     <option value="taking action" className="bg-slate-800">🟡 Taking Action</option>
@@ -197,16 +245,16 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
                   
                   {/* Has Images Indicator */}
                   {hasImages && (
-                    <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/50 flex items-center gap-1">
-                      <Camera className="w-3 h-3" />
+                    <span className="text-sm px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/50 flex items-center gap-1.5 font-medium">
+                      <Camera className="w-4 h-4" />
                       {imageCount} photo{imageCount !== 1 ? 's' : ''}
                     </span>
                   )}
-                  
-                  {/* Location */}
-                  <span className="text-xs text-slate-500">
-                    {incident.latitude.toFixed(4)}, {incident.longitude.toFixed(4)}
-                  </span>
+                </div>
+                
+                {/* Location - Separate Line */}
+                <div className="mt-3 text-sm text-slate-400">
+                  📍 {incident.latitude.toFixed(4)}, {incident.longitude.toFixed(4)}
                 </div>
 
                 {/* Trapped Civilians Details */}
@@ -251,11 +299,27 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
         );
         })}
 
-        {incidents.length === 0 && (
-          <div className="p-8 text-center text-slate-500">
-            No incidents reported
+        {displayedIncidents.length === 0 && (
+          <div className="p-8 text-center">
+            <div className="text-slate-400 text-lg font-semibold mb-2">
+              {typeFilter !== 'all' || statusFilter !== 'all' 
+                ? '🔍 No incidents match your filters' 
+                : '📭 No incidents reported'}
+            </div>
+            {(typeFilter !== 'all' || statusFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setTypeFilter('all');
+                  if (onClearFilter) onClearFilter();
+                }}
+                className="mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Clear All Filters
+              </button>
+            )}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
