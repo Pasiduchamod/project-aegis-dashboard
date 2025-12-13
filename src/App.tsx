@@ -2,8 +2,23 @@ import { useEffect, useState } from 'react';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import { initEmailService } from './services/emailService.js';
-import { subscribeToAidRequests, subscribeToDetentionCamps, subscribeToIncidents } from './services/firebaseService.js';
+import { subscribeToAidRequests, subscribeToDetentionCamps, subscribeToIncidents, subscribeToVolunteers } from './services/firebaseService.js';
 import type { AidRequest, DetentionCamp, Incident } from './types.js';
+
+interface Volunteer {
+  id: string;
+  user_email: string;
+  full_name: string;
+  phone_number: string;
+  skills: string;
+  availability: string;
+  preferred_tasks: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  approved: boolean;
+  created_at: number;
+  updated_at: number;
+}
 
 // Simple admin credentials (in production, use proper authentication)
 const ADMIN_CREDENTIALS = {
@@ -17,7 +32,8 @@ function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [detentionCamps, setDetentionCamps] = useState<DetentionCamp[]>([]);
-  const [isLive] = useState(true);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [isLive, setIsLive] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +74,7 @@ function App() {
     let unsubscribeIncidents: (() => void) | null = null;
     let unsubscribeAidRequests: (() => void) | null = null;
     let unsubscribeDetentionCamps: (() => void) | null = null;
+    let unsubscribeVolunteers: (() => void) | null = null;
 
     try {
       // Subscribe to incidents
@@ -75,6 +92,12 @@ function App() {
       // Subscribe to detention camps
       unsubscribeDetentionCamps = subscribeToDetentionCamps((fetchedCamps) => {
         setDetentionCamps(fetchedCamps);
+        setError(null);
+      });
+
+      // Subscribe to volunteers
+      unsubscribeVolunteers = subscribeToVolunteers((fetchedVolunteers) => {
+        setVolunteers(fetchedVolunteers);
         setIsLoading(false);
         setError(null);
       });
@@ -94,6 +117,9 @@ function App() {
       }
       if (unsubscribeDetentionCamps) {
         unsubscribeDetentionCamps();
+      }
+      if (unsubscribeVolunteers) {
+        unsubscribeVolunteers();
       }
     };
   }, [isAuthenticated]);
@@ -137,6 +163,7 @@ function App() {
         incidents={incidents} 
         aidRequests={aidRequests} 
         detentionCamps={detentionCamps} 
+        volunteers={volunteers}
         isLive={isLive}
         onLogout={handleLogout}
       />
