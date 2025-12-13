@@ -1,21 +1,30 @@
 import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
-import type { Incident } from './types.js';
-import { subscribeToIncidents } from './services/firebaseService.js';
+import type { Incident, AidRequest } from './types.js';
+import { subscribeToIncidents, subscribeToAidRequests } from './services/firebaseService.js';
 
 function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [isLive, setIsLive] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Subscribe to real-time Firebase updates
-    let unsubscribe: (() => void) | null = null;
+    let unsubscribeIncidents: (() => void) | null = null;
+    let unsubscribeAidRequests: (() => void) | null = null;
 
     try {
-      unsubscribe = subscribeToIncidents((fetchedIncidents) => {
+      // Subscribe to incidents
+      unsubscribeIncidents = subscribeToIncidents((fetchedIncidents) => {
         setIncidents(fetchedIncidents);
+        setError(null);
+      });
+
+      // Subscribe to aid requests
+      unsubscribeAidRequests = subscribeToAidRequests((fetchedAidRequests) => {
+        setAidRequests(fetchedAidRequests);
         setIsLoading(false);
         setError(null);
       });
@@ -25,10 +34,13 @@ function App() {
       setIsLoading(false);
     }
 
-    // Cleanup subscription on unmount
+    // Cleanup subscriptions on unmount
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (unsubscribeIncidents) {
+        unsubscribeIncidents();
+      }
+      if (unsubscribeAidRequests) {
+        unsubscribeAidRequests();
       }
     };
   }, []);
@@ -39,7 +51,7 @@ function App() {
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-white text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-xl">Loading incidents...</p>
+          <p className="text-xl">Loading data...</p>
         </div>
       </div>
     );
@@ -63,7 +75,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Dashboard incidents={incidents} isLive={isLive} />
+      <Dashboard incidents={incidents} aidRequests={aidRequests} isLive={isLive} />
     </div>
   );
 }
