@@ -119,12 +119,12 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
 
   // Prepare chart data
   const severityChartData = [
-    { name: 'Low', value: lowSeverity, color: '#22c55e' },
-    { name: 'Minor', value: minorSeverity, color: '#3b82f6' },
-    { name: 'Medium', value: mediumSeverity, color: '#eab308' },
+    { name: 'Low', value: lowSeverity, color: '#10b981' },
+    { name: 'Minor', value: minorSeverity, color: '#06b6d4' },
+    { name: 'Medium', value: mediumSeverity, color: '#f59e0b' },
     { name: 'High', value: highSeverity, color: '#f97316' },
-    { name: 'Critical', value: criticalSeverity, color: '#ef4444' },
-  ];
+    { name: 'Critical', value: criticalSeverity, color: '#dc2626' },
+  ].filter(item => item.value > 0);
 
   const statusChartData = [
     { name: 'Pending', incidents: pendingIncidents, aid: pendingAid },
@@ -135,14 +135,18 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   const incidentTypesChartData = Object.entries(incidentTypes)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 6)
-    .map(([type, count]) => ({ name: type, value: count }));
+    .map(([type, count], index) => ({ 
+      name: type, 
+      value: count,
+      color: ['#ef4444', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6', '#ec4899'][index % 6]
+    }));
 
   const priorityChartData = [
-    { name: 'Low', value: lowPriority, color: '#22c55e' },
-    { name: 'Medium', value: mediumPriority, color: '#eab308' },
+    { name: 'Low', value: lowPriority, color: '#10b981' },
+    { name: 'Medium', value: mediumPriority, color: '#f59e0b' },
     { name: 'High', value: highPriority, color: '#f97316' },
-    { name: 'Critical', value: criticalPriority, color: '#ef4444' },
-  ];
+    { name: 'Critical', value: criticalPriority, color: '#dc2626' },
+  ].filter(item => item.value > 0);
 
   return (
     <div className="space-y-6">
@@ -178,11 +182,11 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
           subtitle={`${todayAidRequests} requested today`}
         />
         <StatCard
-          title="People Affected"
-          value={totalPeopleInAid + totalTrappedPeople}
+          title="People in Camps"
+          value={currentOccupancy}
           icon={<Users className="w-6 h-6 text-purple-400" />}
           color="border-purple-500"
-          subtitle={`${totalTrappedPeople} trapped`}
+          subtitle={`${totalCapacity} total capacity`}
         />
       </div>
 
@@ -441,9 +445,9 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 data={severityChartData}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
+                labelLine={true}
+                label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                outerRadius={90}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -452,9 +456,9 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 ))}
               </Pie>
               <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
               />
+              <Legend wrapperStyle={{ color: '#fff' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -465,15 +469,14 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={statusChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="name" stroke="#94a3b8" />
+              <XAxis dataKey="name" stroke="#94a3b8" style={{ fontSize: '12px' }} />
               <YAxis stroke="#94a3b8" />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
               />
-              <Legend />
-              <Bar dataKey="incidents" fill="#ef4444" name="Incidents" />
-              <Bar dataKey="aid" fill="#3b82f6" name="Aid Requests" />
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              <Bar dataKey="incidents" fill="#ef4444" name="Incidents" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="aid" fill="#3b82f6" name="Aid Requests" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -486,12 +489,15 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
               <BarChart data={incidentTypesChartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis type="number" stroke="#94a3b8" />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" width={120} />
+                <YAxis dataKey="name" type="category" stroke="#94a3b8" width={120} style={{ fontSize: '12px' }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                  labelStyle={{ color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
                 />
-                <Bar dataKey="value" fill="#eab308" name="Count" />
+                <Bar dataKey="value" name="Count" radius={[0, 8, 8, 0]}>
+                  {incidentTypesChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -506,9 +512,9 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 data={priorityChartData}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={100}
+                labelLine={true}
+                label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                outerRadius={90}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -517,9 +523,9 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 ))}
               </Pie>
               <Tooltip 
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#fff' }}
               />
+              <Legend wrapperStyle={{ color: '#fff' }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
