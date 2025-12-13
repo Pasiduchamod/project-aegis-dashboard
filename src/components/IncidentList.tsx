@@ -135,7 +135,7 @@ export default function IncidentList({ incidents, onIncidentClick }: IncidentLis
                   {hasImages && (
                     <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/50 flex items-center gap-1">
                       <Camera className="w-3 h-3" />
-                      {incident.cloudImageUrls?.filter(url => url !== '').length} photo{incident.cloudImageUrls?.filter(url => url !== '').length !== 1 ? 's' : ''}
+                      {imageCount} photo{imageCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   
