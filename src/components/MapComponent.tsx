@@ -123,6 +123,17 @@ export default function MapComponent({ incidents, selectedDistrict }: MapCompone
                   <div className="text-gray-600">
                     Severity: <span className={isCritical ? 'text-red-600 font-semibold' : 'text-orange-600'}>{incident.severity}</span>
                   </div>
+                  <div className="text-gray-600 text-xs mt-1">
+                    Status: <span className={
+                      incident.actionStatus === 'completed' ? 'text-green-600 font-semibold' :
+                      incident.actionStatus === 'taking action' ? 'text-blue-600 font-semibold' :
+                      'text-gray-500'
+                    }>
+                      {incident.actionStatus === 'completed' ? '🟢 Completed' :
+                       incident.actionStatus === 'taking action' ? '🟡 Taking Action' :
+                       '🔴 Pending'}
+                    </span>
+                  </div>
                   <div className="text-gray-500 text-xs mt-1">
                     {formatTime(incident.timestamp)}
                   </div>

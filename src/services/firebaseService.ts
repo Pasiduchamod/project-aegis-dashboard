@@ -1,11 +1,27 @@
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig.js';
-import type { Incident } from '../types.js';
+import type { Incident, ActionStatus } from '../types.js';
 
 export interface FirebaseIncident extends Incident {
   userId?: string;
   created_at: number;
   updated_at: number;
+}
+
+/**
+ * Update the action status of an incident
+ * @param incidentId The ID of the incident to update
+ * @param actionStatus The new action status
+ */
+export async function updateIncidentActionStatus(
+  incidentId: string,
+  actionStatus: ActionStatus
+): Promise<void> {
+  const incidentRef = doc(db, 'incidents', incidentId);
+  await updateDoc(incidentRef, {
+    actionStatus,
+    updated_at: Date.now()
+  });
 }
 
 /**
@@ -38,6 +54,10 @@ export function subscribeToIncidents(
           longitude: data.longitude,
           timestamp: data.timestamp,
           status: data.status || 'synced',
+          actionStatus: data.actionStatus || 'pending',
+          location: data.location,
+          cloudImageUrls: data.cloudImageUrls || [],
+          imageQualities: data.imageQualities || [],
         });
       });
 
@@ -77,6 +97,10 @@ export async function getIncidentsOnce(): Promise<Incident[]> {
             longitude: data.longitude,
             timestamp: data.timestamp,
             status: data.status || 'synced',
+            actionStatus: data.actionStatus || 'pending',
+            location: data.location,
+            cloudImageUrls: data.cloudImageUrls || [],
+            imageQualities: data.imageQualities || [],
           });
         });
 

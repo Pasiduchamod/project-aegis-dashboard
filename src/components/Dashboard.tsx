@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Incident } from '../types.js';
 import MapComponent from './MapComponent';
 import IncidentList from './IncidentList';
+import IncidentDetailModal from './IncidentDetailModal';
 import logo from '../assets/logo.png';
 
 interface DashboardProps {
@@ -61,6 +62,7 @@ const isInDistrict = (lat: number, lng: number, district: string): boolean => {
 
 export default function Dashboard({ incidents, isLive }: DashboardProps) {
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   
   const filteredIncidents = selectedDistrict === 'All Districts' 
     ? incidents 
@@ -141,10 +143,16 @@ export default function Dashboard({ incidents, isLive }: DashboardProps) {
             <div className="p-4 border-b border-slate-800">
               <h2 className="text-lg font-semibold">Recent Reports</h2>
             </div>
-            <IncidentList incidents={filteredIncidents} />
+            <IncidentList incidents={filteredIncidents} onIncidentClick={setSelectedIncident} />
           </div>
         </div>
       </div>
+
+      {/* Incident Detail Modal */}
+      <IncidentDetailModal 
+        incident={selectedIncident} 
+        onClose={() => setSelectedIncident(null)} 
+      />
     </div>
   );
 }
