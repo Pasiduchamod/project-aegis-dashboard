@@ -1,5 +1,5 @@
+import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Shield, Lock, User, AlertCircle } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 interface LoginProps {

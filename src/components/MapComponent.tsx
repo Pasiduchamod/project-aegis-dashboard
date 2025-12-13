@@ -1,4 +1,4 @@
-import { Icon, LatLngExpression, divIcon } from 'leaflet';
+import { Icon, type LatLngExpression, divIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
 import { CircleMarker, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet';

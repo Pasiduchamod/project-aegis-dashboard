@@ -47,14 +47,7 @@ export default function AidRequestDetailModal({ aidRequest, onClose }: AidReques
     return labels[level - 1] || 'Medium';
   };
 
-  const getAidStatusColor = (status: AidStatus = 'pending'): string => {
-    const colors = {
-      'pending': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
-      'taking action': 'bg-blue-500/20 text-blue-400 border-blue-500/50',
-      'completed': 'bg-green-500/20 text-green-400 border-green-500/50',
-    };
-    return colors[status];
-  };
+
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value as AidStatus;

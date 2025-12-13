@@ -1,5 +1,5 @@
-import { AlertTriangle, CheckCircle2, Clock, HandHeart, TrendingUp, Users, MapPin, Shield } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AlertTriangle, CheckCircle2, Clock, HandHeart, MapPin, Shield, TrendingUp, Users } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { AidRequest, DetentionCamp, Incident } from '../types';
 
 interface StatsOverviewProps {
@@ -76,7 +76,7 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   // Aid Request Statistics
   const totalAidRequests = aidRequests.length;
   const todayAidRequests = aidRequests.filter(ar => ar.created_at >= todayStart).length;
-  const criticalAidRequests = aidRequests.filter(ar => ar.priority_level >= 4).length;
+  const _criticalAidRequests = aidRequests.filter(ar => ar.priority_level >= 4).length;
   
   // Aid by status
   const pendingAid = aidRequests.filter(ar => !ar.aidStatus || ar.aidStatus === 'pending').length;
@@ -90,7 +90,7 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   const criticalPriority = aidRequests.filter(ar => ar.priority_level === 5).length;
 
   // People affected
-  const totalPeopleInAid = aidRequests.reduce((sum, ar) => sum + (ar.number_of_people || 0), 0);
+  const _totalPeopleInAid = aidRequests.reduce((sum, ar) => sum + (ar.number_of_people || 0), 0);
   
   // Parse trapped civilians count
   let totalTrappedPeople = 0;
@@ -107,7 +107,7 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   const totalCamps = detentionCamps.length;
   const operationalCamps = detentionCamps.filter(c => c.campStatus === 'operational').length;
   const fullCamps = detentionCamps.filter(c => c.campStatus === 'full').length;
-  const closedCamps = detentionCamps.filter(c => c.campStatus === 'closed').length;
+  const _closedCamps = detentionCamps.filter(c => c.campStatus === 'closed').length;
   const totalCapacity = detentionCamps.reduce((sum, c) => sum + c.capacity, 0);
   const currentOccupancy = detentionCamps.reduce((sum, c) => sum + c.current_occupancy, 0);
   const availableSpace = totalCapacity - currentOccupancy;
@@ -446,7 +446,7 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 cx="50%"
                 cy="50%"
                 labelLine={true}
-                label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                label={({ name, percent }) => (percent !== undefined && percent > 0) ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
                 outerRadius={90}
                 fill="#8884d8"
                 dataKey="value"
@@ -513,7 +513,7 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
                 cx="50%"
                 cy="50%"
                 labelLine={true}
-                label={({ name, percent }) => percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                label={({ name, percent }) => (percent !== undefined && percent > 0) ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
                 outerRadius={90}
                 fill="#8884d8"
                 dataKey="value"
