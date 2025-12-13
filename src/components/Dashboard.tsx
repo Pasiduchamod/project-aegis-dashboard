@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Building2, HandHeart, LogOut } from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, HandHeart, LogOut, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import logo from '../assets/logo.png';
 import type { AidRequest, DetentionCamp, Incident } from '../types.js';
@@ -110,6 +110,20 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
     ? aidRequests
     : aidRequests.filter(ar => isInDistrict(ar.latitude, ar.longitude, selectedDistrict));
   
+  const districtFilteredCamps = selectedDistrict === 'All Districts'
+    ? detentionCamps
+    : detentionCamps.filter(camp => {
+        // Filter by camp_district if available, otherwise by coordinates
+        if (camp.camp_district) {
+          return camp.camp_district === selectedDistrict;
+        }
+        return isInDistrict(camp.latitude, camp.longitude, selectedDistrict);
+      });
+  
+  const districtFilteredVolunteers = selectedDistrict === 'All Districts'
+    ? volunteers
+    : volunteers.filter(v => v.district === selectedDistrict);
+  
   // Calculate counts from district-filtered data (before status filter)
   const criticalCount = districtFilteredIncidents.filter((i) => i.severity >= 4).length;
   const criticalAidCount = districtFilteredAidRequests.filter((ar) => ar.priority_level >= 4).length;
@@ -137,9 +151,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
     filteredAidRequests = filteredAidRequests.filter(ar => ar.aidStatus === 'pending');
   }
   
-  let filteredCamps = selectedDistrict === 'All Districts'
-    ? detentionCamps
-    : detentionCamps.filter(camp => isInDistrict(camp.latitude, camp.longitude, selectedDistrict));
+  let filteredCamps = districtFilteredCamps;
   
   // Calculate counts before approval filter
   const pendingApprovalCamps = filteredCamps.filter((camp) => camp.adminApproved === false).length;
@@ -169,8 +181,21 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
             <h1 className="text-2xl font-bold">LankaSafe HQ</h1>
           </div>
           
-          {/* Right Side - Live Sync Indicator and Logout */}
+          {/* Right Side - District Filter, Live Sync Indicator and Logout */}
           <div className="flex items-center gap-4">
+            {/* District Filter */}
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-slate-400" />
+              <select
+                value={selectedDistrict}
+                onChange={(e) => setSelectedDistrict(e.target.value)}
+                className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer text-sm font-medium"
+              >
+                {SRI_LANKA_DISTRICTS.map(district => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
               <span className="text-sm font-medium">{isLive ? 'Live Sync' : 'Paused'}</span>
@@ -392,7 +417,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
             {/* Total Camps */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
               <div className="text-sm text-slate-400 mb-1">Total Camps</div>
-              <div className="text-3xl font-bold">{detentionCamps.length}</div>
+              <div className="text-3xl font-bold">{districtFilteredCamps.length}</div>
             </div>
 
             {/* Pending Approval */}
@@ -424,7 +449,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
             {/* Operational */}
             <div className="bg-slate-900 border border-blue-900/50 rounded-lg p-6">
               <div className="text-sm text-slate-400 mb-1">Operational</div>
-              <div className="text-3xl font-bold text-blue-500">{operationalCamps}</div>
+              <div className="text-3xl font-bold text-blue-500">{districtFilteredCamps.filter(c => c.campStatus === 'operational').length}</div>
             </div>
 
             {/* Last Updated */}
@@ -443,14 +468,14 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
       {activeTab === 'stats' ? (
         <div className="px-6 pb-6">
           <StatsOverview 
-            incidents={incidents}
-            aidRequests={aidRequests}
-            detentionCamps={detentionCamps}
+            incidents={districtFilteredIncidents}
+            aidRequests={districtFilteredAidRequests}
+            detentionCamps={districtFilteredCamps}
           />
         </div>
       ) : activeTab === 'volunteers' ? (
         <div className="px-6 pb-6">
-          <VolunteerList volunteers={volunteers} />
+          <VolunteerList volunteers={districtFilteredVolunteers} />
         </div>
       ) : (
         <>
