@@ -1,6 +1,7 @@
-import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink } from 'lucide-react';
+import { X, MapPin, Calendar, AlertCircle, FileText, ExternalLink, Mail } from 'lucide-react';
 import type { AidRequest, AidStatus } from '../types.js';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
+import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatAidRequestEmail, sendEmail } from '../utils/emailUtils.js';
 
 interface AidRequestDetailModalProps {
   aidRequest: AidRequest | null;
@@ -63,6 +64,18 @@ export default function AidRequestDetailModal({ aidRequest, onClose }: AidReques
     }
   };
 
+  const handleSendEmail = () => {
+    const district = getDistrictFromCoordinates(aidRequest.latitude, aidRequest.longitude);
+    const email = getDistrictOfficerEmail(district);
+    
+    if (!email) {
+      alert('Unable to determine district from coordinates');
+      return;
+    }
+    
+    const { subject, body } = formatAidRequestEmail(aidRequest);
+    sendEmail(email, subject, body);
+  };
   const googleMapsUrl = `https://www.google.com/maps?q=${aidRequest.latitude},${aidRequest.longitude}`;
 
   return (
@@ -183,6 +196,25 @@ export default function AidRequestDetailModal({ aidRequest, onClose }: AidReques
             <code className="block bg-slate-800/50 p-3 rounded-lg text-xs text-slate-300 font-mono break-all">
               {aidRequest.id}
             </code>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 p-6">
+          <div className="flex gap-3">
+            <button
+              onClick={handleSendEmail}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Mail className="w-5 h-5" />
+              Email District Officer
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>

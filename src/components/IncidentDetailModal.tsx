@@ -1,6 +1,7 @@
-import { X, MapPin, Clock, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { X, MapPin, Clock, AlertCircle, Image as ImageIcon, Mail } from 'lucide-react';
 import type { Incident, ActionStatus } from '../types.js';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
+import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatIncidentEmail, sendEmail } from '../utils/emailUtils.js';
 
 interface IncidentDetailModalProps {
   incident: Incident | null;
@@ -44,6 +45,19 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
     } catch (error) {
       console.error('Failed to update status:', error);
     }
+  };
+
+  const handleSendEmail = () => {
+    const district = getDistrictFromCoordinates(incident.latitude, incident.longitude);
+    const email = getDistrictOfficerEmail(district);
+    
+    if (!email) {
+      alert('Unable to determine district from coordinates');
+      return;
+    }
+    
+    const { subject, body } = formatIncidentEmail(incident);
+    sendEmail(email, subject, body);
   };
 
   // Handle both array and string formats from Firebase
@@ -186,12 +200,21 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 p-6">
-          <button
-            onClick={onClose}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-          >
-            Close
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleSendEmail}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <Mail className="w-5 h-5" />
+              Email District Officer
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
