@@ -1,4 +1,4 @@
-import { AlertTriangle, Building2, HandHeart, LogOut, BarChart3 } from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, HandHeart, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import logo from '../assets/logo.png';
 import type { AidRequest, DetentionCamp, Incident } from '../types.js';
@@ -81,6 +81,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
   const [showAddCampModal, setShowAddCampModal] = useState(false);
   const [incidentStatusFilter, setIncidentStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
   const [aidStatusFilter, setAidStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
+  const [campApprovalFilter, setCampApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [selectedMapLocation, setSelectedMapLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Filter by district first
@@ -119,12 +120,22 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
     filteredAidRequests = filteredAidRequests.filter(ar => ar.aidStatus === 'pending');
   }
   
-  const filteredCamps = selectedDistrict === 'All Districts'
+  let filteredCamps = selectedDistrict === 'All Districts'
     ? detentionCamps
     : detentionCamps.filter(camp => isInDistrict(camp.latitude, camp.longitude, selectedDistrict));
   
-  const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational').length;
-  const fullCamps = filteredCamps.filter((camp) => camp.campStatus === 'full').length;
+  // Calculate counts before approval filter
+  const pendingApprovalCamps = filteredCamps.filter((camp) => camp.adminApproved === false).length;
+  const approvedCamps = filteredCamps.filter((camp) => camp.adminApproved === true).length;
+  const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational' && camp.adminApproved === true).length;
+  const fullCamps = filteredCamps.filter((camp) => camp.campStatus === 'full' && camp.adminApproved === true).length;
+  
+  // Apply approval filter for display
+  if (campApprovalFilter === 'pending') {
+    filteredCamps = filteredCamps.filter(camp => camp.adminApproved === false);
+  } else if (campApprovalFilter === 'approved') {
+    filteredCamps = filteredCamps.filter(camp => camp.adminApproved === true);
+  }
   const lastUpdate = new Date();
 
   return (
@@ -349,27 +360,39 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             {/* Total Camps */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
               <div className="text-sm text-slate-400 mb-1">Total Camps</div>
-              <div className="text-3xl font-bold">{filteredCamps.length}</div>
+              <div className="text-3xl font-bold">{detentionCamps.length}</div>
             </div>
+
+            {/* Pending Approval */}
+            <button
+              onClick={() => setCampApprovalFilter(campApprovalFilter === 'pending' ? 'all' : 'pending')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                campApprovalFilter === 'pending' 
+                  ? 'border-yellow-500 shadow-lg shadow-yellow-500/20' 
+                  : 'border-yellow-900/50 hover:border-yellow-700'
+              }`}
+            >
+              <div className="text-sm text-slate-400 mb-1">Pending Approval</div>
+              <div className="text-3xl font-bold text-yellow-500">{pendingApprovalCamps}</div>
+            </button>
+
+            {/* Approved Camps */}
+            <button
+              onClick={() => setCampApprovalFilter(campApprovalFilter === 'approved' ? 'all' : 'approved')}
+              className={`bg-slate-900 border rounded-lg p-6 text-left transition-all hover:scale-105 ${
+                campApprovalFilter === 'approved' 
+                  ? 'border-green-500 shadow-lg shadow-green-500/20' 
+                  : 'border-green-900/50 hover:border-green-700'
+              }`}
+            >
+              <div className="text-sm text-slate-400 mb-1">Approved</div>
+              <div className="text-3xl font-bold text-green-500">{approvedCamps}</div>
+            </button>
 
             {/* Operational */}
-            <div className="bg-slate-900 border border-green-900/50 rounded-lg p-6">
-              <div className="text-sm text-slate-400 mb-1">Operational</div>
-              <div className="text-3xl font-bold text-green-500">{operationalCamps}</div>
-            </div>
-
-            {/* Full */}
-            <div className="bg-slate-900 border border-orange-900/50 rounded-lg p-6">
-              <div className="text-sm text-slate-400 mb-1">Full</div>
-              <div className="text-3xl font-bold text-orange-500">{fullCamps}</div>
-            </div>
-
-            {/* Total Capacity */}
             <div className="bg-slate-900 border border-blue-900/50 rounded-lg p-6">
-              <div className="text-sm text-slate-400 mb-1">Total Capacity</div>
-              <div className="text-3xl font-bold text-blue-400">
-                {filteredCamps.reduce((sum, camp) => sum + camp.capacity, 0)}
-              </div>
+              <div className="text-sm text-slate-400 mb-1">Operational</div>
+              <div className="text-3xl font-bold text-blue-500">{operationalCamps}</div>
             </div>
 
             {/* Last Updated */}

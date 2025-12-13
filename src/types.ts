@@ -46,6 +46,8 @@ export interface DetentionCamp {
   contact_person?: string;
   contact_phone?: string;
   description?: string;
+  adminApproved?: boolean; // Admin approval status
+  userId?: string; // User who submitted the camp
   created_at: number;
   updated_at: number;
 }
