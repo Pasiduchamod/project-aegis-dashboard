@@ -56,6 +56,7 @@ export function subscribeToIncidents(
           status: data.status || 'synced',
           actionStatus: data.actionStatus || 'pending',
           location: data.location,
+          description: data.description,
           cloudImageUrls: data.cloudImageUrls || [],
           imageQualities: data.imageQualities || [],
         });
@@ -99,6 +100,7 @@ export async function getIncidentsOnce(): Promise<Incident[]> {
             status: data.status || 'synced',
             actionStatus: data.actionStatus || 'pending',
             location: data.location,
+            description: data.description,
             cloudImageUrls: data.cloudImageUrls || [],
             imageQualities: data.imageQualities || [],
           });
