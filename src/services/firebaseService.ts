@@ -1,6 +1,6 @@
-import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig.js';
-import type { Incident, ActionStatus, AidRequest, AidStatus } from '../types.js';
+import type { Incident, ActionStatus, AidRequest, AidStatus, DetentionCamp, CampStatus } from '../types.js';
 
 export interface FirebaseIncident extends Incident {
   userId?: string;
@@ -172,6 +172,110 @@ export function subscribeToAidRequests(
     },
     (error) => {
       console.error('Error fetching aid requests from Firestore:', error);
+      callback([]);
+    }
+  );
+
+  return unsubscribe;
+}
+
+// ============= DETENTION CAMP FUNCTIONS =============
+
+export interface FirebaseDetentionCamp extends DetentionCamp {
+  userId?: string;
+}
+
+/**
+ * Create a new detention camp
+ * @param camp The detention camp data (without timestamps)
+ */
+export async function createDetentionCamp(
+  camp: Omit<DetentionCamp, 'created_at' | 'updated_at'>
+): Promise<string> {
+  const now = Date.now();
+  const campRef = doc(db, 'detention_camps', camp.id);
+  
+  const fullCamp: FirebaseDetentionCamp = {
+    ...camp,
+    created_at: now,
+    updated_at: now,
+  };
+
+  await setDoc(campRef, fullCamp);
+  return camp.id;
+}
+
+/**
+ * Update the status of a detention camp
+ * @param campId The ID of the detention camp to update
+ * @param campStatus The new camp status
+ */
+export async function updateDetentionCampStatus(
+  campId: string,
+  campStatus: CampStatus
+): Promise<void> {
+  const campRef = doc(db, 'detention_camps', campId);
+  await updateDoc(campRef, {
+    campStatus,
+    updated_at: Date.now()
+  });
+}
+
+/**
+ * Update detention camp occupancy
+ * @param campId The ID of the detention camp to update
+ * @param currentOccupancy The new occupancy count
+ */
+export async function updateDetentionCampOccupancy(
+  campId: string,
+  currentOccupancy: number
+): Promise<void> {
+  const campRef = doc(db, 'detention_camps', campId);
+  await updateDoc(campRef, {
+    current_occupancy: currentOccupancy,
+    updated_at: Date.now()
+  });
+}
+
+/**
+ * Subscribe to real-time detention camp updates from Firestore
+ * @param callback Function to call when detention camps data changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToDetentionCamps(
+  callback: (camps: DetentionCamp[]) => void
+): () => void {
+  const campsRef = collection(db, 'detention_camps');
+  const campsQuery = query(campsRef, orderBy('created_at', 'desc'));
+
+  const unsubscribe = onSnapshot(
+    campsQuery,
+    (snapshot) => {
+      const campsArray: DetentionCamp[] = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        campsArray.push({
+          id: data.id || doc.id,
+          name: data.name,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          capacity: data.capacity,
+          current_occupancy: data.current_occupancy || 0,
+          facilities: data.facilities,
+          campStatus: data.campStatus || 'operational',
+          contact_person: data.contact_person,
+          contact_phone: data.contact_phone,
+          description: data.description,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        });
+      });
+
+      callback(campsArray);
+    },
+    (error) => {
+      console.error('Error fetching detention camps from Firestore:', error);
       callback([]);
     }
   );

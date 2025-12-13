@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
-import type { Incident, AidRequest } from './types.js';
-import { subscribeToIncidents, subscribeToAidRequests } from './services/firebaseService.js';
+import type { Incident, AidRequest, DetentionCamp } from './types.js';
+import { subscribeToIncidents, subscribeToAidRequests, subscribeToDetentionCamps } from './services/firebaseService.js';
 
 function App() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
+  const [detentionCamps, setDetentionCamps] = useState<DetentionCamp[]>([]);
   const [isLive, setIsLive] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,6 +15,7 @@ function App() {
     // Subscribe to real-time Firebase updates
     let unsubscribeIncidents: (() => void) | null = null;
     let unsubscribeAidRequests: (() => void) | null = null;
+    let unsubscribeDetentionCamps: (() => void) | null = null;
 
     try {
       // Subscribe to incidents
@@ -25,6 +27,12 @@ function App() {
       // Subscribe to aid requests
       unsubscribeAidRequests = subscribeToAidRequests((fetchedAidRequests) => {
         setAidRequests(fetchedAidRequests);
+        setError(null);
+      });
+
+      // Subscribe to detention camps
+      unsubscribeDetentionCamps = subscribeToDetentionCamps((fetchedCamps) => {
+        setDetentionCamps(fetchedCamps);
         setIsLoading(false);
         setError(null);
       });
@@ -41,6 +49,9 @@ function App() {
       }
       if (unsubscribeAidRequests) {
         unsubscribeAidRequests();
+      }
+      if (unsubscribeDetentionCamps) {
+        unsubscribeDetentionCamps();
       }
     };
   }, []);
@@ -75,7 +86,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <Dashboard incidents={incidents} aidRequests={aidRequests} isLive={isLive} />
+      <Dashboard incidents={incidents} aidRequests={aidRequests} detentionCamps={detentionCamps} isLive={isLive} />
     </div>
   );
 }

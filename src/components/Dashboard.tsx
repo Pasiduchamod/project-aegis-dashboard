@@ -1,20 +1,24 @@
 import { useState } from 'react';
-import type { Incident, AidRequest } from '../types.js';
+import type { Incident, AidRequest, DetentionCamp } from '../types.js';
 import MapComponent from './MapComponent';
 import IncidentList from './IncidentList';
 import IncidentDetailModal from './IncidentDetailModal';
 import AidRequestList from './AidRequestList';
 import AidRequestDetailModal from './AidRequestDetailModal';
+import DetentionCampList from './DetentionCampList';
+import DetentionCampDetailModal from './DetentionCampDetailModal';
+import AddDetentionCampModal from './AddDetentionCampModal';
 import logo from '../assets/logo.png';
-import { AlertTriangle, HandHeart } from 'lucide-react';
+import { AlertTriangle, HandHeart, Building2, Plus } from 'lucide-react';
 
 interface DashboardProps {
   incidents: Incident[];
   aidRequests: AidRequest[];
+  detentionCamps: DetentionCamp[];
   isLive: boolean;
 }
 
-type TabType = 'incidents' | 'aidRequests';
+type TabType = 'incidents' | 'aidRequests' | 'detentionCamps';
 
 const SRI_LANKA_DISTRICTS = [
   'All Districts',
@@ -66,11 +70,13 @@ const isInDistrict = (lat: number, lng: number, district: string): boolean => {
   return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 };
 
-export default function Dashboard({ incidents, aidRequests, isLive }: DashboardProps) {
+export default function Dashboard({ incidents, aidRequests, detentionCamps, isLive }: DashboardProps) {
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [selectedAidRequest, setSelectedAidRequest] = useState<AidRequest | null>(null);
+  const [selectedCamp, setSelectedCamp] = useState<DetentionCamp | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('incidents');
+  const [showAddCampModal, setShowAddCampModal] = useState(false);
   
   const filteredIncidents = selectedDistrict === 'All Districts' 
     ? incidents 
@@ -80,12 +86,18 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
     ? aidRequests
     : aidRequests.filter(ar => isInDistrict(ar.latitude, ar.longitude, selectedDistrict));
   
+  const filteredCamps = selectedDistrict === 'All Districts'
+    ? detentionCamps
+    : detentionCamps.filter(camp => isInDistrict(camp.latitude, camp.longitude, selectedDistrict));
+  
   const criticalCount = filteredIncidents.filter((i) => i.severity >= 4).length;
   const criticalAidCount = filteredAidRequests.filter((ar) => ar.priority_level >= 4).length;
   const completedIncidents = filteredIncidents.filter((i) => i.actionStatus === 'completed').length;
   const pendingIncidents = filteredIncidents.filter((i) => i.actionStatus === 'pending').length;
   const completedAidRequests = filteredAidRequests.filter((ar) => ar.aidStatus === 'completed').length;
   const pendingAidRequests = filteredAidRequests.filter((ar) => ar.aidStatus === 'pending').length;
+  const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational').length;
+  const fullCamps = filteredCamps.filter((camp) => camp.campStatus === 'full').length;
   const lastUpdate = new Date();
 
   return (
@@ -147,6 +159,23 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('detentionCamps')}
+            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-colors relative ${
+              activeTab === 'detentionCamps'
+                ? 'text-purple-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Building2 className="w-5 h-5" />
+            Detention Camps
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-bold">
+              {filteredCamps.length}
+            </span>
+            {activeTab === 'detentionCamps' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -186,7 +215,7 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
               </div>
             </div>
           </>
-        ) : (
+        ) : activeTab === 'aidRequests' ? (
           <>
             {/* Total Aid Requests */}
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
@@ -220,6 +249,42 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
               </div>
             </div>
           </>
+        ) : (
+          <>
+            {/* Total Camps */}
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
+              <div className="text-sm text-slate-400 mb-1">Total Camps</div>
+              <div className="text-3xl font-bold">{filteredCamps.length}</div>
+            </div>
+
+            {/* Operational */}
+            <div className="bg-slate-900 border border-green-900/50 rounded-lg p-6">
+              <div className="text-sm text-slate-400 mb-1">Operational</div>
+              <div className="text-3xl font-bold text-green-500">{operationalCamps}</div>
+            </div>
+
+            {/* Full */}
+            <div className="bg-slate-900 border border-orange-900/50 rounded-lg p-6">
+              <div className="text-sm text-slate-400 mb-1">Full</div>
+              <div className="text-3xl font-bold text-orange-500">{fullCamps}</div>
+            </div>
+
+            {/* Total Capacity */}
+            <div className="bg-slate-900 border border-blue-900/50 rounded-lg p-6">
+              <div className="text-sm text-slate-400 mb-1">Total Capacity</div>
+              <div className="text-3xl font-bold text-blue-400">
+                {filteredCamps.reduce((sum, camp) => sum + camp.capacity, 0)}
+              </div>
+            </div>
+
+            {/* Last Updated */}
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
+              <div className="text-sm text-slate-400 mb-1">Last Updated</div>
+              <div className="text-lg font-medium">
+                {lastUpdate.toLocaleTimeString()}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -230,7 +295,7 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
           <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                {activeTab === 'incidents' ? 'Live Incident Map' : 'Aid Request Map'}
+                {activeTab === 'incidents' ? 'Live Incident Map' : activeTab === 'aidRequests' ? 'Aid Request Map' : 'Detention Camps Map'}
               </h2>
               <select 
                 value={selectedDistrict}
@@ -252,15 +317,26 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
         {/* Feed (33% width on desktop) */}
         <div className="lg:col-span-1">
           <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-800">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <h2 className="text-lg font-semibold">
-                {activeTab === 'incidents' ? 'Recent Reports' : 'Recent Aid Requests'}
+                {activeTab === 'incidents' ? 'Recent Reports' : activeTab === 'aidRequests' ? 'Recent Aid Requests' : 'Registered Camps'}
               </h2>
+              {activeTab === 'detentionCamps' && (
+                <button
+                  onClick={() => setShowAddCampModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Camp
+                </button>
+              )}
             </div>
             {activeTab === 'incidents' ? (
               <IncidentList incidents={filteredIncidents} onIncidentClick={setSelectedIncident} />
-            ) : (
+            ) : activeTab === 'aidRequests' ? (
               <AidRequestList aidRequests={filteredAidRequests} onAidRequestClick={setSelectedAidRequest} />
+            ) : (
+              <DetentionCampList camps={filteredCamps} onCampClick={setSelectedCamp} />
             )}
           </div>
         </div>
@@ -275,6 +351,18 @@ export default function Dashboard({ incidents, aidRequests, isLive }: DashboardP
         aidRequest={selectedAidRequest} 
         onClose={() => setSelectedAidRequest(null)} 
       />
+      <DetentionCampDetailModal 
+        camp={selectedCamp} 
+        onClose={() => setSelectedCamp(null)} 
+      />
+      {showAddCampModal && (
+        <AddDetentionCampModal 
+          onClose={() => setShowAddCampModal(false)} 
+          onSuccess={() => {
+            // Modal will close automatically, camps list will update via Firebase subscription
+          }}
+        />
+      )}
     </div>
   );
 }
