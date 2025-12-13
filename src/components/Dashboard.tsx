@@ -1,4 +1,4 @@
-import { AlertTriangle, Building2, HandHeart, LogOut } from 'lucide-react';
+import { AlertTriangle, Building2, HandHeart, LogOut, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import logo from '../assets/logo.png';
 import type { AidRequest, DetentionCamp, Incident } from '../types.js';
@@ -10,6 +10,7 @@ import DetentionCampList from './DetentionCampList';
 import IncidentDetailModal from './IncidentDetailModal';
 import IncidentList from './IncidentList';
 import MapComponent from './MapComponent';
+import StatsOverview from './StatsOverview';
 
 interface DashboardProps {
   incidents: Incident[];
@@ -19,7 +20,7 @@ interface DashboardProps {
   onLogout?: () => void;
 }
 
-type TabType = 'incidents' | 'aidRequests' | 'detentionCamps';
+type TabType = 'stats' | 'incidents' | 'aidRequests' | 'detentionCamps';
 
 const SRI_LANKA_DISTRICTS = [
   'All Districts',
@@ -214,6 +215,20 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400" />
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('stats')}
+            className={`flex items-center gap-2 px-6 py-3 font-semibold transition-colors relative ${
+              activeTab === 'stats'
+                ? 'text-green-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5" />
+            Overview & Stats
+            {activeTab === 'stats' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-400" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -368,41 +383,52 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
         )}
       </div>
 
-      {/* Main Grid: Map + Feed */}
-      <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Map (66% width on desktop) */}
-        <div className="lg:col-span-2">
-          <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                {activeTab === 'incidents' ? 'Live Incident Map' : activeTab === 'aidRequests' ? 'Aid Request Map' : 'Detention Camps Map'}
-              </h2>
-              <select 
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
-                className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-red-500 cursor-pointer"
-              >
-                {SRI_LANKA_DISTRICTS.map(district => (
-                  <option key={district} value={district}>{district}</option>
-                ))}
-              </select>
-            </div>
-            <MapComponent 
-              incidents={activeTab === 'incidents' ? filteredIncidents : []} 
-              aidRequests={activeTab === 'aidRequests' ? filteredAidRequests : []}
-              camps={activeTab === 'detentionCamps' ? filteredCamps : []}
-              selectedDistrict={selectedDistrict}
-              onMapClick={(lat, lng) => {
-                if (activeTab === 'detentionCamps') {
-                  setSelectedMapLocation({ lat, lng });
-                  setShowAddCampModal(true);
-                }
-              }}
-              enableMapClick={activeTab === 'detentionCamps'}
-              tempMarkerLocation={selectedMapLocation}
-            />
-          </div>
+      {/* Main Content */}
+      {activeTab === 'stats' ? (
+        <div className="px-6 pb-6">
+          <StatsOverview 
+            incidents={incidents}
+            aidRequests={aidRequests}
+            detentionCamps={detentionCamps}
+          />
         </div>
+      ) : (
+        <>
+          {/* Main Grid: Map + Feed */}
+          <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Map (66% width on desktop) */}
+            <div className="lg:col-span-2">
+              <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">
+                    {activeTab === 'incidents' ? 'Live Incident Map' : activeTab === 'aidRequests' ? 'Aid Request Map' : 'Detention Camps Map'}
+                  </h2>
+                  <select 
+                    value={selectedDistrict}
+                    onChange={(e) => setSelectedDistrict(e.target.value)}
+                    className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-red-500 cursor-pointer"
+                  >
+                    {SRI_LANKA_DISTRICTS.map(district => (
+                      <option key={district} value={district}>{district}</option>
+                    ))}
+                  </select>
+                </div>
+                <MapComponent 
+                  incidents={activeTab === 'incidents' ? filteredIncidents : []} 
+                  aidRequests={activeTab === 'aidRequests' ? filteredAidRequests : []}
+                  camps={activeTab === 'detentionCamps' ? filteredCamps : []}
+                  selectedDistrict={selectedDistrict}
+                  onMapClick={(lat, lng) => {
+                    if (activeTab === 'detentionCamps') {
+                      setSelectedMapLocation({ lat, lng });
+                      setShowAddCampModal(true);
+                    }
+                  }}
+                  enableMapClick={activeTab === 'detentionCamps'}
+                  tempMarkerLocation={selectedMapLocation}
+                />
+              </div>
+            </div>
 
         {/* Feed (33% width on desktop) */}
         <div className="lg:col-span-1">
@@ -442,7 +468,9 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
             )}
           </div>
         </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Modals */}
       <IncidentDetailModal 
