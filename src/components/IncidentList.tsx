@@ -1,4 +1,4 @@
-import { Droplets, Mountain, Flame, Zap, Cloud, AlertTriangle, Camera, X } from 'lucide-react';
+import { Droplets, Mountain, Flame, Zap, Cloud, AlertTriangle, Camera, X, Users } from 'lucide-react';
 import type { Incident, ActionStatus } from '../types.js';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
 
@@ -24,6 +24,11 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
         return <Zap className={iconClass} />;
       case 'storm':
         return <Cloud className={iconClass} />;
+      case 'trapped civilians':
+        return <Users className={iconClass} />;
+      case 'road block':
+      case 'power line down':
+        return <AlertTriangle className={iconClass} />;
       default:
         return <AlertTriangle className={iconClass} />;
     }
@@ -131,16 +136,24 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
           const hasImages = imageUrls.length > 0 && imageUrls[0] !== '' && imageUrls[0] !== null;
           const imageCount = imageUrls.filter(url => url && url !== '' && url !== null).length;
           
+          const isTrappedCivilians = incident.type === 'Trapped Civilians';
+          
           return (
           <div
             key={incident.id}
-            className="p-4 hover:bg-slate-800/50 transition-colors cursor-pointer"
+            className={`p-4 hover:bg-slate-800/50 transition-colors cursor-pointer ${
+              isTrappedCivilians ? 'border-2 border-red-500 bg-red-500/10 rounded-lg mb-2' : ''
+            }`}
             onClick={() => onIncidentClick(incident)}
           >
             <div className="flex items-start gap-3">
               {/* Icon */}
               <div className={`p-2 rounded-lg ${
-                incident.severity >= 4 ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'
+                isTrappedCivilians 
+                  ? 'bg-red-500/30 text-red-400 border-2 border-red-500' 
+                  : incident.severity >= 4 
+                  ? 'bg-red-500/20 text-red-400' 
+                  : 'bg-orange-500/20 text-orange-400'
               }`}>
                 {getIcon(incident.type)}
               </div>
@@ -148,7 +161,14 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-sm">{incident.type}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-sm">{incident.type}</h3>
+                    {isTrappedCivilians && (
+                      <span className="text-xs px-2 py-0.5 rounded bg-red-500 text-white font-bold animate-pulse">
+                        CRITICAL
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-slate-400 whitespace-nowrap">
                     {formatTime(incident.timestamp)}
                   </span>
@@ -188,6 +208,28 @@ export default function IncidentList({ incidents, onIncidentClick, statusFilter 
                     {incident.latitude.toFixed(4)}, {incident.longitude.toFixed(4)}
                   </span>
                 </div>
+
+                {/* Trapped Civilians Details */}
+                {isTrappedCivilians && incident.description && (() => {
+                  const parts = incident.description.split(' | ');
+                  const trappedCount = parts[0]?.replace('TRAPPED PEOPLE: ', '') || 'Unknown';
+                  const details = parts[1]?.replace('DETAILS: ', '') || '';
+                  return (
+                    <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-red-400" />
+                        <span className="text-sm font-bold text-red-400">
+                          {trappedCount} {parseInt(trappedCount) === 1 ? 'Person' : 'People'} Trapped
+                        </span>
+                      </div>
+                      {details && (
+                        <p className="text-xs text-slate-300 line-clamp-2">
+                          <span className="font-semibold text-red-400">Details:</span> {details}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

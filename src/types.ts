@@ -13,6 +13,7 @@ export interface Incident {
   status: IncidentStatus;
   actionStatus?: ActionStatus;
   location?: string;
+  description?: string;
   cloudImageUrls?: string[];
   imageQualities?: ('none' | 'low' | 'high')[];
 }

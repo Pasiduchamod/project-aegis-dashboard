@@ -1,4 +1,4 @@
-import { X, MapPin, Clock, AlertCircle, Image as ImageIcon, Mail } from 'lucide-react';
+import { X, MapPin, Clock, AlertCircle, Image as ImageIcon, Mail, Users, AlertTriangle } from 'lucide-react';
 import type { Incident, ActionStatus } from '../types.js';
 import { updateIncidentActionStatus } from '../services/firebaseService.js';
 import { getDistrictFromCoordinates, getDistrictOfficerEmail, formatIncidentEmail, sendEmail } from '../utils/emailUtils.js';
@@ -95,6 +95,34 @@ export default function IncidentDetailModal({ incident, onClose }: IncidentDetai
 
         {/* Content */}
         <div className="p-6 space-y-6">
+          {/* Critical Alert for Trapped Civilians */}
+          {incident.type === 'Trapped Civilians' && (
+            <div className="bg-red-500/20 border-2 border-red-500 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+                <h3 className="text-xl font-bold text-red-400">⚠️ CRITICAL INCIDENT - TRAPPED CIVILIANS</h3>
+              </div>
+              {incident.description && (() => {
+                const parts = incident.description.split(' | ');
+                const trappedCount = parts[0]?.replace('TRAPPED PEOPLE: ', '') || 'Unknown';
+                const details = parts[1]?.replace('DETAILS: ', '') || 'No details provided';
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-red-400" />
+                      <p className="text-red-300 font-semibold">
+                        Number of Trapped People: <span className="text-2xl text-red-400">{trappedCount}</span>
+                      </p>
+                    </div>
+                    <div className="bg-slate-900/50 rounded-lg p-3">
+                      <p className="text-slate-300 font-semibold mb-1">Situation Details:</p>
+                      <p className="text-slate-300">{details}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           {/* Images Section */}
           {hasImages && (
             <div className="space-y-3">
