@@ -306,3 +306,65 @@ export function subscribeToDetentionCamps(
 
   return unsubscribe;
 }
+
+/**
+ * Subscribe to real-time volunteer updates from Firestore
+ * @param callback Function to call when volunteers data changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToVolunteers(
+  callback: (volunteers: any[]) => void
+): () => void {
+  const volunteersRef = collection(db, 'volunteers');
+  const volunteersQuery = query(volunteersRef, orderBy('created_at', 'desc'));
+
+  const unsubscribe = onSnapshot(
+    volunteersQuery,
+    (snapshot) => {
+      const volunteersArray: any[] = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        volunteersArray.push({
+          id: data.id || doc.id,
+          user_email: data.user_email,
+          full_name: data.full_name,
+          phone_number: data.phone_number,
+          skills: data.skills,
+          availability: data.availability,
+          preferred_tasks: data.preferred_tasks,
+          emergency_contact: data.emergency_contact,
+          emergency_phone: data.emergency_phone,
+          approved: data.approved ?? false,
+          userId: data.userId,
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+        });
+      });
+
+      callback(volunteersArray);
+    },
+    (error) => {
+      console.error('Error fetching volunteers from Firestore:', error);
+      callback([]);
+    }
+  );
+
+  return unsubscribe;
+}
+
+/**
+ * Update volunteer approval status
+ * @param volunteerId The ID of the volunteer to update
+ * @param approved The new approval status
+ */
+export async function updateVolunteerApproval(
+  volunteerId: string,
+  approved: boolean
+): Promise<void> {
+  const volunteerRef = doc(db, 'volunteers', volunteerId);
+  await updateDoc(volunteerRef, {
+    approved,
+    updated_at: Date.now()
+  });
+}
