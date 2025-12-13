@@ -1,6 +1,6 @@
-import { MapPin, Users, Building2, Clock } from 'lucide-react';
-import type { DetentionCamp, CampStatus } from '../types.js';
-import { updateDetentionCampStatus } from '../services/firebaseService.js';
+import { AlertCircle, Building2, CheckCircle, Clock, MapPin, Users, XCircle } from 'lucide-react';
+import { updateCampApproval, updateDetentionCampStatus } from '../services/firebaseService.js';
+import type { CampStatus, DetentionCamp } from '../types.js';
 
 interface DetentionCampListProps {
   camps: DetentionCamp[];
@@ -47,6 +47,15 @@ export default function DetentionCampList({ camps, onCampClick }: DetentionCampL
     }
   };
 
+  const handleApprovalChange = async (e: React.MouseEvent, campId: string, approved: boolean) => {
+    e.stopPropagation();
+    try {
+      await updateCampApproval(campId, approved);
+    } catch (error) {
+      console.error('Failed to update camp approval:', error);
+    }
+  };
+
   return (
     <div className="h-[600px] overflow-y-auto">
       <div className="divide-y divide-slate-800">
@@ -84,6 +93,20 @@ export default function DetentionCampList({ camps, onCampClick }: DetentionCampL
                   </div>
 
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {/* Approval Status Badge */}
+                    {camp.adminApproved === false && (
+                      <span className="text-xs px-2 py-1 rounded border bg-yellow-500/20 text-yellow-400 border-yellow-500/50 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        Pending Approval
+                      </span>
+                    )}
+                    {camp.adminApproved === true && (
+                      <span className="text-xs px-2 py-1 rounded border bg-green-500/20 text-green-400 border-green-500/50 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Approved
+                      </span>
+                    )}
+
                     {/* Occupancy */}
                     <span className={`text-xs px-2 py-1 rounded border bg-slate-900 border-slate-700 flex items-center gap-1`}>
                       <Users className="w-3 h-3" />
@@ -124,6 +147,26 @@ export default function DetentionCampList({ camps, onCampClick }: DetentionCampL
                     <p className="mt-2 text-xs text-slate-400 line-clamp-1">
                       {camp.description}
                     </p>
+                  )}
+
+                  {/* Approval Actions */}
+                  {camp.adminApproved === false && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={(e) => handleApprovalChange(e, camp.id, true)}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30 transition-colors flex items-center justify-center gap-1"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        Approve Camp
+                      </button>
+                      <button
+                        onClick={(e) => handleApprovalChange(e, camp.id, false)}
+                        className="flex-1 px-3 py-1.5 text-xs font-medium rounded bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30 transition-colors flex items-center justify-center gap-1"
+                      >
+                        <XCircle className="w-3 h-3" />
+                        Reject
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

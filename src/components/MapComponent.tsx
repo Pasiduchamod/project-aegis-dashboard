@@ -316,6 +316,9 @@ export default function MapComponent({ incidents, aidRequests = [], camps = [], 
               <Tooltip direction="top" offset={[0, -16]} opacity={0.9}>
                 <div className="text-xs">
                   <div className="font-semibold">🏠 {camp.name}</div>
+                  {camp.adminApproved === false && (
+                    <div className="text-yellow-600 font-semibold">⚠ Pending Approval</div>
+                  )}
                   <div>Occupancy: {camp.current_occupancy}/{camp.capacity}</div>
                   <div className={
                     camp.campStatus === 'operational' ? 'text-green-600' :
@@ -336,6 +339,13 @@ export default function MapComponent({ incidents, aidRequests = [], camps = [], 
                   </div>
                   
                   <div className="space-y-1 mb-2">
+                    {camp.adminApproved === false && (
+                      <div className="text-gray-600">
+                        <span className="font-semibold">Approval:</span>{' '}
+                        <span className="text-yellow-600 font-semibold">⚠ Pending</span>
+                      </div>
+                    )}
+                    
                     <div className="text-gray-600">
                       <span className="font-semibold">Status:</span>{' '}
                       <span className={

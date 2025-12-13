@@ -1,6 +1,6 @@
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig.js';
-import type { Incident, ActionStatus, AidRequest, AidStatus, DetentionCamp, CampStatus } from '../types.js';
+import type { ActionStatus, AidRequest, AidStatus, CampStatus, DetentionCamp, Incident } from '../types.js';
 
 export interface FirebaseIncident extends Incident {
   userId?: string;
@@ -202,6 +202,7 @@ export async function createDetentionCamp(
   
   const fullCamp: FirebaseDetentionCamp = {
     ...camp,
+    adminApproved: true, // Admin-created camps are auto-approved
     created_at: now,
     updated_at: now,
   };
@@ -243,6 +244,22 @@ export async function updateDetentionCampOccupancy(
 }
 
 /**
+ * Update the admin approval status of a detention camp
+ * @param campId The ID of the detention camp to update
+ * @param adminApproved The approval status
+ */
+export async function updateCampApproval(
+  campId: string,
+  adminApproved: boolean
+): Promise<void> {
+  const campRef = doc(db, 'detention_camps', campId);
+  await updateDoc(campRef, {
+    adminApproved,
+    updated_at: Date.now()
+  });
+}
+
+/**
  * Subscribe to real-time detention camp updates from Firestore
  * @param callback Function to call when detention camps data changes
  * @returns Unsubscribe function
@@ -272,6 +289,8 @@ export function subscribeToDetentionCamps(
           contact_person: data.contact_person,
           contact_phone: data.contact_phone,
           description: data.description,
+          adminApproved: data.adminApproved !== undefined ? data.adminApproved : true,
+          userId: data.userId,
           created_at: data.created_at,
           updated_at: data.updated_at,
         });
