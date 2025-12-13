@@ -128,7 +128,6 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, isLi
   const pendingApprovalCamps = filteredCamps.filter((camp) => camp.adminApproved === false).length;
   const approvedCamps = filteredCamps.filter((camp) => camp.adminApproved === true).length;
   const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational' && camp.adminApproved === true).length;
-  const _fullCamps = filteredCamps.filter((camp) => camp.campStatus === 'full' && camp.adminApproved === true).length;
   
   // Apply approval filter for display
   if (campApprovalFilter === 'pending') {

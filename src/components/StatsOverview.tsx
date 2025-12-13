@@ -76,7 +76,6 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   // Aid Request Statistics
   const totalAidRequests = aidRequests.length;
   const todayAidRequests = aidRequests.filter(ar => ar.created_at >= todayStart).length;
-  const _criticalAidRequests = aidRequests.filter(ar => ar.priority_level >= 4).length;
   
   // Aid by status
   const pendingAid = aidRequests.filter(ar => !ar.aidStatus || ar.aidStatus === 'pending').length;
@@ -88,9 +87,6 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   const mediumPriority = aidRequests.filter(ar => ar.priority_level === 3).length;
   const highPriority = aidRequests.filter(ar => ar.priority_level === 4).length;
   const criticalPriority = aidRequests.filter(ar => ar.priority_level === 5).length;
-
-  // People affected
-  const _totalPeopleInAid = aidRequests.reduce((sum, ar) => sum + (ar.number_of_people || 0), 0);
   
   // Parse trapped civilians count
   let totalTrappedPeople = 0;
