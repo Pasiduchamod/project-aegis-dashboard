@@ -10,6 +10,7 @@ interface Volunteer {
   user_email: string;
   full_name: string;
   phone_number: string;
+  district: string; // JSON string array
   skills: string;
   availability: string;
   preferred_tasks: string;
