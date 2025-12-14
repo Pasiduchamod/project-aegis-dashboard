@@ -7,7 +7,7 @@ export interface Volunteer {
   user_email: string;
   full_name: string;
   phone_number: string;
-  district: string;
+  district: string; // JSON string array
   skills: string; // JSON string array
   availability: string;
   preferred_tasks: string; // JSON string array
@@ -174,10 +174,23 @@ export default function VolunteerList({ volunteers, onVolunteerUpdate }: Volunte
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-4 mb-2">
+                      <div className="space-y-2 mb-3">
                         <div>
-                          <span className="text-xs text-slate-400 mr-2">District:</span>
-                          <span className="text-sm text-indigo-300 font-medium">{volunteer.district}</span>
+                          <div className="text-xs text-slate-400 mb-1">Preferred Districts:</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {parseJSONArray(volunteer.district || '[]').length > 0 ? (
+                              parseJSONArray(volunteer.district || '[]').map((dist, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-xs font-medium border border-indigo-500/30"
+                                >
+                                   {dist}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-slate-500 italic">No districts specified</span>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <span className="text-xs text-slate-400 mr-2">Availability:</span>

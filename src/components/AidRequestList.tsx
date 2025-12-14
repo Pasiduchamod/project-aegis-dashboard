@@ -1,6 +1,6 @@
-import { MapPin, AlertCircle, Clock, X, Users } from 'lucide-react';
-import type { AidRequest, AidStatus } from '../types.js';
+import { AlertCircle, Clock, MapPin, Users, X } from 'lucide-react';
 import { updateAidRequestStatus } from '../services/firebaseService.js';
+import type { AidRequest, AidStatus } from '../types.js';
 
 interface AidRequestListProps {
   aidRequests: AidRequest[];
@@ -10,14 +10,40 @@ interface AidRequestListProps {
 }
 
 export default function AidRequestList({ aidRequests, onAidRequestClick, statusFilter = 'all', onClearFilter }: AidRequestListProps) {
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+  const formatTime = (value: unknown) => {
+    let date: Date;
+
+    if (value instanceof Date) {
+      date = value;
+    } else if (typeof value === 'number') {
+      // Handle seconds vs milliseconds
+      const ms = value < 1_000_000_000_000 ? value * 1000 : value;
+      date = new Date(ms);
+    } else if (typeof value === 'string') {
+      date = new Date(value);
+    } else if (value && typeof value === 'object') {
+      const v = value as { toDate?: () => Date; seconds?: number };
+      if (typeof v.toDate === 'function') {
+        date = v.toDate();
+      } else if (typeof v.seconds === 'number') {
+        date = new Date(v.seconds * 1000);
+      } else {
+        date = new Date(NaN);
+      }
+    } else {
+      date = new Date(NaN);
+    }
+
+    const ts = date.getTime();
+    if (isNaN(ts)) return 'Unknown date';
+
+    const nowMs = Date.now();
+    const diffMs = Math.max(0, nowMs - ts);
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
+    if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;

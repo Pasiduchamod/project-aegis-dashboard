@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Building2, HandHeart, LogOut, MapPin } from 'lucide-react';
+import { AlertTriangle, ArrowUpDown, BarChart3, Building2, HandHeart, LogOut, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import logo from '../assets/logo.png';
 import type { AidRequest, DetentionCamp, Incident } from '../types.js';
@@ -100,6 +100,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
   const [aidStatusFilter, setAidStatusFilter] = useState<'all' | 'critical' | 'completed' | 'pending'>('all');
   const [campApprovalFilter, setCampApprovalFilter] = useState<'all' | 'pending' | 'approved'>('all');
   const [selectedMapLocation, setSelectedMapLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'severity'>('recent');
   
   // Filter by district first
   const districtFilteredIncidents = selectedDistrict === 'All Districts' 
@@ -113,16 +114,10 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
   const districtFilteredCamps = selectedDistrict === 'All Districts'
     ? detentionCamps
     : detentionCamps.filter(camp => {
-        // Filter by camp_district if available, otherwise by coordinates
-        if (camp.camp_district) {
-          return camp.camp_district === selectedDistrict;
-        }
         return isInDistrict(camp.latitude, camp.longitude, selectedDistrict);
       });
   
-  const districtFilteredVolunteers = selectedDistrict === 'All Districts'
-    ? volunteers
-    : volunteers.filter(v => v.district === selectedDistrict);
+  const districtFilteredVolunteers = volunteers;
   
   // Calculate counts from district-filtered data (before status filter)
   const criticalCount = districtFilteredIncidents.filter((i) => i.severity >= 4).length;
@@ -142,6 +137,17 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
     filteredIncidents = filteredIncidents.filter(i => i.actionStatus === 'pending');
   }
   
+  // Apply sorting
+  filteredIncidents = [...filteredIncidents].sort((a, b) => {
+    if (sortBy === 'recent') {
+      return b.timestamp - a.timestamp;
+    } else if (sortBy === 'oldest') {
+      return a.timestamp - b.timestamp;
+    } else { // severity
+      return b.severity - a.severity;
+    }
+  });
+  
   let filteredAidRequests = districtFilteredAidRequests;
   if (aidStatusFilter === 'critical') {
     filteredAidRequests = filteredAidRequests.filter(ar => ar.priority_level >= 4);
@@ -151,12 +157,22 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
     filteredAidRequests = filteredAidRequests.filter(ar => ar.aidStatus === 'pending');
   }
   
+  // Apply sorting
+  filteredAidRequests = [...filteredAidRequests].sort((a, b) => {
+    if (sortBy === 'recent') {
+      return b.created_at - a.created_at;
+    } else if (sortBy === 'oldest') {
+      return a.created_at - b.created_at;
+    } else { // severity
+      return b.priority_level - a.priority_level;
+    }
+  });
+  
   let filteredCamps = districtFilteredCamps;
   
   // Calculate counts before approval filter
   const pendingApprovalCamps = filteredCamps.filter((camp) => camp.adminApproved === false).length;
   const approvedCamps = filteredCamps.filter((camp) => camp.adminApproved === true).length;
-  const operationalCamps = filteredCamps.filter((camp) => camp.campStatus === 'operational' && camp.adminApproved === true).length;
   
   // Apply approval filter for display
   if (campApprovalFilter === 'pending') {
@@ -180,7 +196,7 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
             <h1 className="text-2xl font-bold">LankaSafe HQ</h1>
           </div>
           
-          {/* Right Side - District Filter, Live Sync Indicator and Logout */}
+          {/* Right Side - District Filter, Sort, Live Sync Indicator and Logout */}
           <div className="flex items-center gap-4">
             {/* District Filter */}
             <div className="flex items-center gap-2">
@@ -193,6 +209,19 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
                 {SRI_LANKA_DISTRICTS.map(district => (
                   <option key={district} value={district}>{district}</option>
                 ))}
+              </select>
+            </div>
+            {/* Sort Filter */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-slate-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'recent' | 'oldest' | 'severity')}
+                className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-blue-500 cursor-pointer text-sm font-medium"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest First</option>
+                <option value="severity">By Severity</option>
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -483,19 +512,10 @@ export default function Dashboard({ incidents, aidRequests, detentionCamps, volu
             {/* Map (66% width on desktop) */}
             <div className="lg:col-span-2">
               <div className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-800">
                   <h2 className="text-lg font-semibold">
                     {activeTab === 'incidents' ? 'Live Incident Map' : activeTab === 'aidRequests' ? 'Aid Request Map' : 'Detention Camps Map'}
                   </h2>
-                  <select 
-                    value={selectedDistrict}
-                    onChange={(e) => setSelectedDistrict(e.target.value)}
-                    className="bg-slate-800 text-white px-4 py-2 rounded-lg border border-slate-700 focus:outline-none focus:border-red-500 cursor-pointer"
-                  >
-                    {SRI_LANKA_DISTRICTS.map(district => (
-                      <option key={district} value={district}>{district}</option>
-                    ))}
-                  </select>
                 </div>
                 <MapComponent 
                   incidents={activeTab === 'incidents' ? filteredIncidents : []} 
