@@ -8,23 +8,23 @@ A comprehensive disaster management and emergency response dashboard for coordin
 
 ## 📸 Screenshots
 
-### Dashboard Overview
+### Aid Request Tracking
 
 ![Dashboard Overview](https://res.cloudinary.com/dnfbik3if/image/upload/v1765684535/Screenshot_2025-12-14_092444_ybypkp.png)
 
-### Incident Management
+### Detention Camp Management
 
 ![Incident Management](https://res.cloudinary.com/dnfbik3if/image/upload/v1765684535/Screenshot_2025-12-14_092450_yklviy.png)
 
-### Aid Request Tracking
+### Incident Management 
 
 ![Aid Request Tracking](https://res.cloudinary.com/dnfbik3if/image/upload/v1765684535/Screenshot_2025-12-14_092438_qlqfyv.png)
 
-### Detention Camp Management
+### Volunteer Coordination
 
 ![Detention Camp Management](https://res.cloudinary.com/dnfbik3if/image/upload/v1765684534/Screenshot_2025-12-14_092456_h5ppb7.png)
 
-### Volunteer Coordination
+### Statistics Detailed View
 
 ![Volunteer Coordination](https://res.cloudinary.com/dnfbik3if/image/upload/v1765684534/Screenshot_2025-12-14_092502_pqoueb.png)
 
