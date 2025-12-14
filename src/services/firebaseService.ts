@@ -330,6 +330,7 @@ export function subscribeToVolunteers(
           user_email: data.user_email,
           full_name: data.full_name,
           phone_number: data.phone_number,
+          district: data.district,
           skills: data.skills,
           availability: data.availability,
           preferred_tasks: data.preferred_tasks,

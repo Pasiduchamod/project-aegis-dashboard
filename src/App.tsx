@@ -33,7 +33,7 @@ function App() {
   const [aidRequests, setAidRequests] = useState<AidRequest[]>([]);
   const [detentionCamps, setDetentionCamps] = useState<DetentionCamp[]>([]);
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
-  const [isLive, setIsLive] = useState(true);
+  const [isLive] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

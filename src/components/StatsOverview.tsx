@@ -103,7 +103,6 @@ export default function StatsOverview({ incidents, aidRequests, detentionCamps }
   const totalCamps = detentionCamps.length;
   const operationalCamps = detentionCamps.filter(c => c.campStatus === 'operational').length;
   const fullCamps = detentionCamps.filter(c => c.campStatus === 'full').length;
-  const _closedCamps = detentionCamps.filter(c => c.campStatus === 'closed').length;
   const totalCapacity = detentionCamps.reduce((sum, c) => sum + c.capacity, 0);
   const currentOccupancy = detentionCamps.reduce((sum, c) => sum + c.current_occupancy, 0);
   const availableSpace = totalCapacity - currentOccupancy;

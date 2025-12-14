@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebaseConfig';
 
@@ -7,12 +7,6 @@ interface UserSignalCheckProps {
   contextType: 'incident' | 'aidRequest';
   contextId: string;
   adminId: string;
-}
-
-interface UserPresence {
-  userId: string;
-  lastSeenAt: number;
-  isOnline: boolean;
 }
 
 interface PendingCheck {
